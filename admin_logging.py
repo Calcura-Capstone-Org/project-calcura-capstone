@@ -119,7 +119,7 @@ class AdminLogFilter:
 class DatabaseSession:
   """
   Very simple database session wrapper.
-  In a real project this would wrap a connection / ORM session.
+  This should wrap a connection / Object Relational Mapper (ORM) session.
   """
 
   def __init__(self, connection: Any) -> None:
