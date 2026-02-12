@@ -1,2 +1,11 @@
-# Project_Calcura
-Fall 2025 - Spring 2025 IT Capstone project
+
+  # Budget Dashboard for Calcura
+
+  This is a code bundle for Budget Dashboard for Calcura. The original project is available at https://www.figma.com/design/KR9mUwXuq3XWcQtfdOGgBu/Budget-Dashboard-for-Calcura.
+
+  ## Running the code
+
+  Run `npm i` to install the dependencies.
+
+  Run `npm run dev` to start the development server.
+  
