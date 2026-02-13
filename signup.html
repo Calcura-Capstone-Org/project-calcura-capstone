@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="split">
+    <section class="left">
+      <div class="brand">
+        <img class="logo" src="calcura-logo.png" alt="Calcura Logo" />
+        <h1 class="brand-name">Calcura</h1>
+        <p class="tagline">Smart budgeting for every stage of life</p>
+      </div>
+    </section>
+
+    <section class="right">
+      <div class="card">
+        <h2 class="hello">Create Account</h2>
+
+        <label class="label" for="name">Full Name</label>
+        <input id="name" class="input" type="text" placeholder="Full Name" />
+
+        <label class="label" for="email2">Email Address</label>
+        <input id="email2" class="input" type="email" placeholder="Email Address" />
+
+        <label class="label" for="pw2">Password</label>
+        <input id="pw2" class="input" type="password" placeholder="Password" />
+
+        <label class="label" for="pw3">Confirm Password</label>
+        <input id="pw3" class="input" type="password" placeholder="Confirm Password" />
+
+        <button class="btn btn-primary" id="createBtn">Create Account</button>
+
+        <button class="link-btn" type="button" onclick="window.location.href='login.html'">
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    document.getElementById("createBtn").addEventListener("click", () => {
+      window.location.href = "login.html";
+    });
+    
+  </script>
+</body>
+</html>

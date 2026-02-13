@@ -1,0 +1,207 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #222;
+}
+
+.split {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+}
+
+.left {
+  background: #f3f0e7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.brand {
+  text-align: center;
+  max-width: 420px;
+}
+
+.logo {
+  width: 220px;
+  height: auto;
+  display: block;
+  margin: 0 auto 18px;
+}
+
+.brand-name {
+  margin: 0;
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.tagline {
+  margin: 10px 0 0;
+  font-size: 16px;
+  opacity: 0.8;
+}
+
+.right {
+  background: #dfe7f5; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.card {
+  width: min(380px, 92vw);
+  background: #fff;
+  border: 2px solid #2b2b2b;
+  border-radius: 18px;
+  padding: 28px 26px;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.10);
+}
+
+.hello {
+  margin: 0 0 18px;
+  text-align: center;
+  font-size: 28px;
+}
+
+.label {
+  display: block;
+  font-size: 13px;
+  margin: 14px 0 6px;
+  opacity: 0.85;
+}
+
+.input {
+  width: 100%;
+  padding: 12px 12px;
+  border: 2px solid #2b2b2b;
+  border-radius: 12px;
+  outline: none;
+}
+
+.input:focus {
+  border-color: #1f4a9c;
+}
+
+.btn {
+  width: 100%;
+  border: 2px solid #2b2b2b;
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 16px;
+}
+
+.btn-primary {
+  background: #b9d3ad; 
+}
+
+.link-btn {
+  background: transparent;
+  border: none;
+  padding: 10px 0;
+  cursor: pointer;
+  color: #333;
+  text-align: left;
+  width: 100%;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+.divider {
+  border: none;
+  border-top: 2px solid #2b2b2b;
+  margin: 14px 0;
+  opacity: 0.6;
+}
+
+@media (max-width: 900px) {
+  .split {
+    grid-template-columns: 1fr;
+  }
+  .left {
+    min-height: 42vh;
+  }
+}
+
+
+@media (max-width: 900px) {
+  .split {
+    grid-template-columns: 1fr;
+    min-height: 100vh;
+  }
+
+  .left, .right {
+    padding: 24px;
+  }
+
+  .left {
+    min-height: 38vh;
+  }
+
+  .logo {
+    width: 140px;
+  }
+
+  .brand-name {
+    font-size: 36px;
+  }
+
+  .tagline {
+    font-size: 14px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 420px;
+    padding: 22px 20px;
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 420px) {
+  .left {
+    min-height: 34vh;
+  }
+
+  .logo {
+    width: 120px;
+  }
+
+  .brand-name {
+    font-size: 30px;
+  }
+
+  .hello {
+    font-size: 24px;
+  }
+
+  .input {
+    padding: 11px;
+  }
+
+  .btn {
+    padding: 11px;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1200px) {
+  .split {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .logo {
+    width: 180px;
+  }
+
+  .card {
+    width: min(420px, 90%);
+  }
+}
+

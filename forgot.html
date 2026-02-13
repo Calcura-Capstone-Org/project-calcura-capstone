@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forgot Password</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="split">
+    <section class="left">
+      <div class="brand">
+        <img class="logo" src="calcura-logo.png" alt="Calcura Logo" />
+        <h1 class="brand-name">Calcura</h1>
+        <p class="tagline">Smart budgeting for every stage of life</p>
+      </div>
+    </section>
+
+    <section class="right">
+      <div class="card">
+        <h2 class="hello">Reset Password</h2>
+
+        <div id="stepEmail">
+          <label class="label" for="resetEmail">Email Address</label>
+          <input id="resetEmail" class="input" type="email" placeholder="Email Address" />
+          <button class="btn btn-primary" id="sendResetBtn">Send Email</button>
+          <p id="msg1" style="margin:12px 0 0;"></p>
+        </div>
+
+        <div id="stepOtp" style="display:none; margin-top:16px;">
+          <label class="label" for="otp">Verification Code</label>
+          <input id="otp" class="input" type="text" placeholder="Enter the code" />
+          <button class="btn btn-primary" id="verifyBtn">Verify</button>
+          <p id="msg2" style="margin:12px 0 0;"></p>
+        </div>
+
+        <div id="stepNewPw" style="display:none; margin-top:16px;">
+          <label class="label" for="newPw">New Password</label>
+          <input id="newPw" class="input" type="password" placeholder="New Password" />
+
+          <label class="label" for="newPw2">Confirm Password</label>
+          <input id="newPw2" class="input" type="password" placeholder="Confirm Password" />
+
+          <button class="btn btn-primary" id="resetBtn">Update Password</button>
+          <p id="msg3" style="margin:12px 0 0;"></p>
+        </div>
+
+        <button class="link-btn" type="button" onclick="window.location.href='login.html'">
+          Back to Login
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+
+    let generatedOtp = "";
+
+    const emailEl = document.getElementById("resetEmail");
+    const otpEl = document.getElementById("otp");
+    const newPwEl = document.getElementById("newPw");
+    const newPw2El = document.getElementById("newPw2");
+
+    const stepOtp = document.getElementById("stepOtp");
+    const stepNewPw = document.getElementById("stepNewPw");
+
+    const msg1 = document.getElementById("msg1");
+    const msg2 = document.getElementById("msg2");
+    const msg3 = document.getElementById("msg3");
+
+   
+
+    document.getElementById("sendResetBtn").addEventListener("click", () => {
+      const email = emailEl.value.trim();
+      msg1.textContent = "";
+      msg2.textContent = "";
+      msg3.textContent = "";
+
+      if (!email) {
+        alert("Please enter your email.");
+        return;
+      }
+
+
+    
+      stepOtp.style.display = "block";
+      otpEl.value = "";
+      otpEl.focus();
+
+      stepNewPw.style.display = "none";
+    });
+
+    document.getElementById("verifyBtn").addEventListener("click", () => {
+      const otp = otpEl.value.trim();
+      msg2.textContent = "";
+      msg3.textContent = "";
+
+
+
+      msg2.textContent = "Verified! Please enter your new password.";
+      stepNewPw.style.display = "block";
+      newPwEl.value = "";
+      newPw2El.value = "";
+      newPwEl.focus();
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      const p1 = newPwEl.value.trim();
+      const p2 = newPw2El.value.trim();
+      msg3.textContent = "";
+
+      if (!p1 || !p2) {
+        msg3.textContent = "Please fill out both password fields.";
+        return;
+      }
+
+      if (p1 !== p2) {
+        msg3.textContent = "Passwords do not match.";
+        return;
+      }
+
+      alert("Password updated successfully. Please login again.");
+      window.location.href = "login.html";
+    });
+  </script>
+</body>
+</html>
