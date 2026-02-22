@@ -20,31 +20,65 @@
       <div class="card">
         <h2 class="hello">Create Account</h2>
 
-        <label class="label" for="name">Full Name</label>
-        <input id="name" class="input" type="text" placeholder="Full Name" />
+        <form id="signupForm">
+          <label class="label" for="name">Full Name</label>
+          <input id="name" class="input" type="text" placeholder="Full Name" required />
 
-        <label class="label" for="email2">Email Address</label>
-        <input id="email2" class="input" type="email" placeholder="Email Address" />
+          <label class="label" for="email2">Email Address</label>
+          <input id="email2" class="input" type="email" placeholder="Email Address" required />
 
-        <label class="label" for="pw2">Password</label>
-        <input id="pw2" class="input" type="password" placeholder="Password" />
+          <label class="label" for="pw2">Password</label>
+          <input id="pw2" class="input" type="password" placeholder="Password" required minlength="8" />
 
-        <label class="label" for="pw3">Confirm Password</label>
-        <input id="pw3" class="input" type="password" placeholder="Confirm Password" />
+          <label class="label" for="pw3">Confirm Password</label>
+          <input id="pw3" class="input" type="password" placeholder="Confirm Password" required minlength="8" />
 
-        <button class="btn btn-primary" id="createBtn">Create Account</button>
+          <p id="matchError" style="margin:12px 0 0; color:red;"></p>
+
+          <button class="btn btn-primary" id="createBtn" type="submit">Create Account</button>
+        </form>
 
         <button class="link-btn" type="button" onclick="window.location.href='login.html'">
+          Back to Login
         </button>
       </div>
     </section>
   </main>
 
   <script>
-    document.getElementById("createBtn").addEventListener("click", () => {
-      window.location.href = "login.html";
+    document.addEventListener("DOMContentLoaded", function () {
+      const form = document.getElementById("signupForm");
+      const nameEl = document.getElementById("name");
+      const emailEl = document.getElementById("email2");
+      const pwA = document.getElementById("pw2");
+      const pwB = document.getElementById("pw3");
+      const matchError = document.getElementById("matchError");
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        matchError.textContent = "";
+
+        const nameValid = nameEl.checkValidity();
+        const emailValid = emailEl.checkValidity();
+        const pwAValid = pwA.checkValidity();
+        const pwBValid = pwB.checkValidity();
+
+        if (nameValid === true && emailValid === true && pwAValid === true && pwBValid === true) {
+          if (pwA.value === pwB.value) {
+            alert("Account created! Please log in.");
+            window.location.href = "login.html";
+          } else {
+            matchError.textContent = "Passwords do not match.";
+          }
+          return;
+        }
+
+        if (nameValid === false) { nameEl.reportValidity(); return; }
+        if (emailValid === false) { emailEl.reportValidity(); return; }
+        if (pwAValid === false) { pwA.reportValidity(); return; }
+        if (pwBValid === false) { pwB.reportValidity(); return; }
+      });
     });
-    
   </script>
 </body>
 </html>
