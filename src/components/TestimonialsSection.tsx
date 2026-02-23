@@ -1,4 +1,4 @@
-/* Jaren Schneider worte all 40 lines /*
+/* Jaren Schneider worte all 40 lines */
 import { Card } from "./ui/card";
 import { Quote } from "lucide-react";
 
