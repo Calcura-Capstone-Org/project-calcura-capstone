@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from "react"; // Jaren Schneider lines 1-170 
 import { Header } from "./components/Header";
 import { HeroSection } from "./components/HeroSection";
 import { FeaturesSection } from "./components/FeaturesSection";
