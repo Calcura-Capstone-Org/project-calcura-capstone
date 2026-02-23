@@ -1,3 +1,4 @@
+*/Jaren Schneider wrote all 30 lines of code for this file*/
 import { Card } from "./ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
