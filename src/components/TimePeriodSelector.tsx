@@ -1,3 +1,4 @@
+*/Jaeyhong Shin wrote all 22 lines of code for this file*/
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 
 type TimePeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
