@@ -1,3 +1,4 @@
+*/ Jaren Schneider wrote all 43 lines of code in this file. */ 
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
 
