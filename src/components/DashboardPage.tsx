@@ -1,3 +1,4 @@
+/* Jaehyeong Shin wrote all 176 lines of code for this file */
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { TrendingUp, TrendingDown, DollarSign, CreditCard, PiggyBank, Target } from "lucide-react";
