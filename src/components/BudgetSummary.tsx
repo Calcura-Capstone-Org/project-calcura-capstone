@@ -1,3 +1,4 @@
+/* Jaren Schneider programmed all 72 lines of code in this file */
 import { Card } from "./ui/card";
 import { TrendingUp, TrendingDown, Wallet, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 
