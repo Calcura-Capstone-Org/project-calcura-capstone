@@ -1,3 +1,4 @@
+*/ Jaeyeong Shin wrote all 98 lines of code for this File*/
 import { Card } from "./ui/card";
 import { useState } from "react";
 import { Input } from "./ui/input";
