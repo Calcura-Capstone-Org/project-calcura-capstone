@@ -1,4 +1,4 @@
-/*Jonathan Torres wrote all 242 lines of code for this file /*
+/*Jonathan Torres wrote all 242 lines of code for this file */
 import { useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
