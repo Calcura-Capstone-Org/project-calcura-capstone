@@ -1,3 +1,4 @@
+*/ Jaren Schenider wrote all 46 lines of code for this file.*/
 import { Card } from "./ui/card";
 import { BarChart3, Calendar, Search } from "lucide-react";
 
