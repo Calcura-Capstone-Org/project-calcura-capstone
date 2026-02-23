@@ -1,3 +1,4 @@
+*/ Jaeyhong Shin wrote all 54 lines of code for this file. */
 import { Card } from "./ui/card";
 import { Progress } from "./ui/progress";
 
