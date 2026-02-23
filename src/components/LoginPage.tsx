@@ -1,4 +1,4 @@
-/* Jaren Schneider wrote all 140 lines of code for this file /*
+/* Jaren Schneider wrote all 140 lines of code for this file */
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
