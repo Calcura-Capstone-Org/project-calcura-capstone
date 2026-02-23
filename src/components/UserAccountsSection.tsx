@@ -1,3 +1,4 @@
+*/ Jaeyeong Shin wrote all 109 lines of code for this file. */
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Check } from "lucide-react";
