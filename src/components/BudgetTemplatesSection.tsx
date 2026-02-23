@@ -1,3 +1,4 @@
+*/ Joseph St.John write all 96 lines of code for this file /*
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Sparkles, Briefcase, Palmtree } from "lucide-react";
