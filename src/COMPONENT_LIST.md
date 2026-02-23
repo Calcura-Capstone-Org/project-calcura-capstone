@@ -3,7 +3,7 @@
 ## Main Application
 
 ### App.tsx
-Main application component that manages state-based routing between all pages (landing, template, login, account, dashboard, about, contact) and handles user authentication state.
+Main application component that manages state-based routing between all pages (landing, template, login, account, dashboard, about, contact) and handles user authentication state. Written by Jaren Schneider. 
 
 ---
 
