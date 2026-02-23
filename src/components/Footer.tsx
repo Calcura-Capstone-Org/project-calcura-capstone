@@ -1,3 +1,4 @@
+/*Jaren Schneider wrote 79 lines of code for this file */
 import { Twitter, Facebook, Instagram } from "lucide-react";
 
 interface FooterProps {
