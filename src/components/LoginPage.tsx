@@ -4,6 +4,9 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import logoImage from "figma:asset/1a36a3a0f13bed42158cef736e0c5fd1e80a9a0c.png";
 
+/* API URL */
+const API_URL = import.meta.env.VITE_API_URL;
+
 interface LoginPageProps {
   onClose?: () => void;
   onCreateAccount?: () => void;
@@ -22,14 +25,43 @@ export function LoginPage({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log("Login attempt with:", email);
+
+    try {
+      const response = await fetch(`${API_URL}/sessions/login`, { method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          email: email,
+          password: password
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Login failed:", errorData);
+        alert("Invalid email or password. Please try again.");
+        return;
+      }
+
+      const data = await response.json();
+      console.log("Login successful:", data);
+
+      //Store session tokens here? 
+
+      onLoginSuccess?.();
+    } catch (error) {
+      console.error("Network error:", error);
+      alert("Unable to reach the server");
+    }
+    
+    // Commenting the following out as it will override the actual login logic
+
+   /* console.log("Login attempt with:", email);
     // Call the success handler to navigate to dashboard
     if (onLoginSuccess) {
       onLoginSuccess();
-    }
+    }*/
   };
 
   const handleForgotPassword = () => {
