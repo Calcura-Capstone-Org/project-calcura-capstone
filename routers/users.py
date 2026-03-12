@@ -37,9 +37,46 @@ def create_user(user: UserCreate):
     timestamp = now_timestamp()
 
     conn.execute(
-        "INSERT INTO Users (email, password_hash, age, is_active, created_on, updated_on) VALUES (?, ?, ?, ?, ?, ?)",
-        (user.email, password_hash, user.age, 1, timestamp, timestamp)
+        "INSERT INTO Users (email, password_hash, mfa_secret, age, is_active, created_on, updated_on) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (user.email, password_hash, None, user.age, 1, timestamp, timestamp)
     )
     conn.commit()
     conn.close()
     return {"Message": "User created successfully"}
+
+# Login Endpoint
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+@router.post("/login")
+def login(data: LoginRequest):
+    conn = get_connection()
+
+    # 1. Look up the user by email
+    user = conn.execute(
+        "SELECT * FROM Users WHERE email = ?",
+        (data.email,)
+    ).fetchone()
+
+    if not user:
+        conn.close()
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # 2. Hash incoming password
+    incoming_hash = hash_password(data.password)
+
+    # 3. Compare with stored hash
+    if incoming_hash != user["password_hash"]:
+        conn.close()
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    conn.close()
+
+    # 4. Return user info
+    return {
+        "message": "Login successful",
+        "user_id": user["user_id"],
+        "email": user["email"]
+    }

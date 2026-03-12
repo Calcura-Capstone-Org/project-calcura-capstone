@@ -7,6 +7,9 @@ import logoImage from "figma:asset/1a36a3a0f13bed42158cef736e0c5fd1e80a9a0c.png"
 /* API URL */
 const API_URL = import.meta.env.VITE_API_URL;
 
+//remove later
+console.log("API_URL =", API_URL);
+
 interface LoginPageProps {
   onClose?: () => void;
   onCreateAccount?: () => void;
@@ -29,7 +32,8 @@ export function LoginPage({
     e.preventDefault();
 
     try {
-      const response = await fetch(`${API_URL}/sessions/login`, { method: "POST",
+      //const response = await fetch(`${API_URL}/sessions/login`, { method: "POST",
+      const response = await fetch(`${API_URL}/users/login`, { method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
           email: email,
@@ -48,8 +52,11 @@ export function LoginPage({
       console.log("Login successful:", data);
 
       //Store session tokens here? 
+      localStorage.setItem("user_id", data.user_id);
+      localStorage.setItem("email", data.email);
 
       onLoginSuccess?.();
+
     } catch (error) {
       console.error("Network error:", error);
       alert("Unable to reach the server");
