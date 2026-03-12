@@ -20,3 +20,16 @@ def root():
 # To run the app, use the command: uvicorn testapp:app --reload
 # If this command does not work, use "python -m uvicorn testapp:app --reload" instead
 # http://127.0.0.1:8000/docs#/ to access the API documentation and test the endpoints.
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
