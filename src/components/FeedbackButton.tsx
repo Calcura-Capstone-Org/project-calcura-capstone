@@ -1,4 +1,4 @@
-/*Jonathan Torres wrote all 15 lines of code for this file /*
+/*Jonathan Torres wrote all 15 lines of code for this file */
 import { MessageSquare } from "lucide-react";
 import { Button } from "./ui/button";
 
