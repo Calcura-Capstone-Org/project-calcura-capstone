@@ -8,6 +8,12 @@ import { Textarea } from "./ui/textarea";
 import { Mail, Phone, MapPin, Send, MessageSquare } from "lucide-react";
 import { toast } from "sonner@2.0.3";
 
+/* API URL */
+const API_URL = import.meta.env.VITE_API_URL;
+
+//remove later
+console.log("API_URL =", API_URL);
+
 export function ContactPage() {
   const [formData, setFormData] = useState({
     name: "",

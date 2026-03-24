@@ -2,6 +2,12 @@
 import { MessageSquare } from "lucide-react";
 import { Button } from "./ui/button";
 
+/* API URL */
+const API_URL = import.meta.env.VITE_API_URL;
+
+//remove later
+console.log("API_URL =", API_URL);
+
 export function FeedbackButton() {
   return (
     <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50">

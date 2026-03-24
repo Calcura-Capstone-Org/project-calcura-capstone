@@ -7,6 +7,12 @@ import { Card } from "./ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Settings, User, Bell, Lock, CreditCard, HelpCircle } from "lucide-react";
 
+/* API URL */
+const API_URL = import.meta.env.VITE_API_URL;
+
+//remove later
+console.log("API_URL =", API_URL);
+
 export function AccountPage() {
   const [name, setName] = useState("John Doe");
   const [email, setEmail] = useState("john.doe@example.com");

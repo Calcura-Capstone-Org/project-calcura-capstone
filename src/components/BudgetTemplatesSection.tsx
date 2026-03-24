@@ -3,11 +3,17 @@ import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Sparkles, Briefcase, Palmtree } from "lucide-react";
 
+//* API URL */
+const API_URL = import.meta.env.VITE_API_URL;
+
+//remove later
+console.log("API_URL =", API_URL);
+
 const templates = [
   {
     id: 1,
     icon: Sparkles,
-    title: "Youth",
+    title: "Young Adult",
     description: "Start your financial journey with simple budgeting and savings goals",
     services: [
       "Basic expense tracking",

@@ -3,6 +3,12 @@ import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { TrendingUp, TrendingDown, DollarSign, CreditCard, PiggyBank, Target } from "lucide-react";
 
+/* API URL */
+const API_URL = import.meta.env.VITE_API_URL;
+
+//remove later
+console.log("API_URL =", API_URL);
+
 export function DashboardPage() {
   // Mock data for the dashboard
   const budgetSummary = {

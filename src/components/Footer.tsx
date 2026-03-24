@@ -1,6 +1,12 @@
 /*Jaren Schneider wrote 79 lines of code for this file */
 import { Twitter, Facebook, Instagram } from "lucide-react";
 
+/* API URL */
+const API_URL = import.meta.env.VITE_API_URL;
+
+//remove later
+console.log("API_URL =", API_URL);
+
 interface FooterProps {
   onAboutClick?: () => void;
   onContactClick?: () => void;

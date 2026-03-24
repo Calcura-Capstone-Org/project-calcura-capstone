@@ -1,6 +1,12 @@
 /*Jaeyhong Shin wrote all 22 lines of code for this file*/
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 
+/* API URL */
+const API_URL = import.meta.env.VITE_API_URL;
+
+//remove later
+console.log("API_URL =", API_URL);
+
 type TimePeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 interface TimePeriodSelectorProps {

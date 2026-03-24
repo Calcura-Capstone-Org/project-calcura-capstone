@@ -8,6 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Plus, Trash2, ArrowRight } from "lucide-react";
 import { Alert, AlertDescription } from "./ui/alert";
 
+/* API URL */
+const API_URL = import.meta.env.VITE_API_URL;
+
+//remove later
+console.log("API_URL =", API_URL);
+
 interface Expense {
   id: string;
   type: string;

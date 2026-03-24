@@ -3,6 +3,12 @@ import { Card } from "./ui/card";
 import { Target, Users, Heart, TrendingUp, Shield, Lightbulb } from "lucide-react";
 import logoImage from "figma:asset/1a36a3a0f13bed42158cef736e0c5fd1e80a9a0c.png";
 
+/* API URL */
+const API_URL = import.meta.env.VITE_API_URL;
+
+//remove later
+console.log("API_URL =", API_URL);
+
 export function AboutPage() {
   return (
     <div className="min-h-screen bg-gray-50">
