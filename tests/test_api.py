@@ -12,13 +12,16 @@ from testapp import app
 
 # -- Fixtures --
 
+DB_URI = "file:test_db?mode=memory&cache=shared"
+
+
 @pytest.fixture
 def mock_db():
-    """Create an in-memory SQLite database with the required schema."""
-    conn = sqlite3.connect(":memory:")
+    """Create a shared in-memory SQLite database with the required schema."""
+    conn = sqlite3.connect(DB_URI, uri=True, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("""
-        CREATE TABLE Users (
+        CREATE TABLE IF NOT EXISTS Users (
             user_id INTEGER PRIMARY KEY AUTOINCREMENT,
             email TEXT NOT NULL,
             password_hash TEXT NOT NULL,
@@ -30,7 +33,7 @@ def mock_db():
         )
     """)
     conn.execute("""
-        CREATE TABLE budgets (
+        CREATE TABLE IF NOT EXISTS budgets (
             budget_id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             period_start TEXT,
@@ -41,7 +44,7 @@ def mock_db():
         )
     """)
     conn.execute("""
-        CREATE TABLE categories (
+        CREATE TABLE IF NOT EXISTS categories (
             category_id INTEGER PRIMARY KEY AUTOINCREMENT,
             budget_id INTEGER NOT NULL,
             name TEXT NOT NULL,
@@ -51,7 +54,7 @@ def mock_db():
         )
     """)
     conn.execute("""
-        CREATE TABLE roles (
+        CREATE TABLE IF NOT EXISTS roles (
             role_id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             created_on TEXT,
@@ -59,7 +62,7 @@ def mock_db():
         )
     """)
     conn.execute("""
-        CREATE TABLE permissions (
+        CREATE TABLE IF NOT EXISTS permissions (
             permission_id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             created_on TEXT,
@@ -68,6 +71,10 @@ def mock_db():
     """)
     conn.commit()
     yield conn
+    # Clean up tables between tests
+    for table in ["Users", "budgets", "categories", "roles", "permissions"]:
+        conn.execute(f"DELETE FROM {table}")
+    conn.commit()
     conn.close()
 
 
@@ -75,7 +82,9 @@ def mock_db():
 def client(mock_db):
     """Create a test client with a mocked database connection."""
     def get_mock_connection():
-        return mock_db
+        conn = sqlite3.connect(DB_URI, uri=True, check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        return conn
 
     with patch("databasev1.get_connection", get_mock_connection):
         # Patch each router's imported get_connection
