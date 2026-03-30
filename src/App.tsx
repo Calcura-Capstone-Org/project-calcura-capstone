@@ -11,8 +11,10 @@ import { AccountPage } from "./components/AccountPage";
 import { DashboardPage } from "./components/DashboardPage";
 import { AboutPage } from "./components/AboutPage";
 import { ContactPage } from "./components/ContactPage";
+import { SignUpPage } from "./components/SignUpPage";
+import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
 
-type PageView = "landing" | "template" | "login" | "account" | "dashboard" | "about" | "contact";
+type PageView = "landing" | "template" | "login" | "account" | "dashboard" | "about" | "contact" | "signup" | "forgotPassword";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<PageView>("landing");
@@ -27,16 +29,36 @@ export default function App() {
     return (
       <LoginPage 
         onClose={() => setCurrentPage("landing")}
-        onCreateAccount={() => {
-          // Handle create account navigation
-          console.log("Navigate to create account");
-        }}
+        onCreateAccount={() => setCurrentPage("signup")}
         onContinueAsGuest={() => {
           // Handle continue as guest
           setCurrentPage("landing");
         }}
         onHomeClick={() => setCurrentPage("landing")}
         onLoginSuccess={handleLogin}
+        onForgotPassword={() => setCurrentPage("forgotPassword")}
+
+      />
+    );
+  }
+
+  if (currentPage === "signup") {
+    return (
+      <SignUpPage
+        onClose={() => setCurrentPage("landing")}
+        onCreateAccount={() => setCurrentPage("login")}
+        onContinueAsGuest={() => setCurrentPage("landing")}
+        onHomeClick={() => setCurrentPage("landing")}
+        onLoginSuccess={handleLogin}  
+      />
+    );
+  }
+
+  if (currentPage === "forgotPassword") {
+    return (
+      <ForgotPasswordPage
+        onBackToLogin={() => setCurrentPage("login")}
+        onHomeClick={() => setCurrentPage("landing")}
       />
     );
   }

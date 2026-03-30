@@ -16,6 +16,7 @@ interface LoginPageProps {
   onContinueAsGuest?: () => void;
   onHomeClick?: () => void;
   onLoginSuccess?: () => void;
+  onForgotPassword?: () => void;
 }
 
 export function LoginPage({
@@ -24,6 +25,7 @@ export function LoginPage({
   onContinueAsGuest,
   onHomeClick,
   onLoginSuccess,
+  onForgotPassword,
 }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -72,6 +74,7 @@ export function LoginPage({
   };
 
   const handleForgotPassword = () => {
+    onForgotPassword?.();
     // Handle forgot password logic
     console.log("Forgot password clicked");
   };
