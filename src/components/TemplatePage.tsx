@@ -8,6 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Plus, Trash2, ArrowRight } from "lucide-react";
 import { Alert, AlertDescription } from "./ui/alert";
 
+interface TemplatePageProps {
+  onTemplateSaved?: () => void;
+}
+
 /* API URL */
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -48,7 +52,7 @@ interface Investment {
   amount: string;
 }
 
-export function TemplatePage() {
+export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
   const [currentSection, setCurrentSection] = useState(1);
   const [activeUserEmail, setActiveUserEmail] = useState("");
   
@@ -79,10 +83,19 @@ export function TemplatePage() {
   // Retirement question
   const [showRetirementQuestion, setShowRetirementQuestion] = useState(false);
 
+  // Template save state
+  const [templateName, setTemplateName] = useState("");
+  const [templateSaved, setTemplateSaved] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+
   useEffect(() => {
     const userEmail = localStorage.getItem("email");
     if (userEmail) {
       setActiveUserEmail(userEmail);
+    }
+    const userId = localStorage.getItem("user_id");
+    if (userId) {
+      setCurrentUserId(Number(userId));
     }
   }, []);
 
@@ -225,6 +238,210 @@ export function TemplatePage() {
     setInvestments(investments.filter(inv => inv.id !== id));
   };
 
+  const saveTemplate = async () => {
+    if (!templateName.trim()) {
+      return;
+    }
+    if (!currentUserId) {
+      alert("Please sign in to save a template.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/templates/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          user_id: currentUserId,
+          name: templateName.trim(),
+          stage_id: 1,
+          is_default: false
+        })
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Failed saving template: ${response.status} ${text}`);
+      }
+
+      const data = await response.json();
+      const templateId = data?.template_id;
+      if (!templateId) {
+        throw new Error("Template created but template_id missing from response");
+      }
+
+      const incomeAmt = parseFloat(takeHomePay);
+      if (Number.isFinite(incomeAmt) && incomeAmt > 0) {
+        const incomeResponse = await fetch(`${API_URL}/template_items/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            template_id: templateId,
+            category_id: 101,
+            planned_amt: incomeAmt,
+            item_name: "Income"
+          })
+        });
+
+        if (!incomeResponse.ok) {
+          const text = await incomeResponse.text();
+          throw new Error(`Failed saving income template item: ${incomeResponse.status} ${text}`);
+        }
+      }
+
+      const categoryMap: { [key: string]: number } = {
+        "Housing/Rent": 201,
+        "Utilities": 202,
+        "Groceries": 203,
+        "Transportation": 204,
+        "Insurance": 205,
+        "Phone": 206,
+        "Internet": 207,
+        "Entertainment": 208,
+        "Dining Out": 209,
+        "Healthcare": 210,
+        "Custom": 211
+      };
+
+      const expenseFetches = expenses
+        .map((exp) => {
+          const amount = parseFloat(exp.amount);
+          if (!exp.type || Number.isNaN(amount) || amount <= 0) {
+            return null;
+          }
+          const category_id = categoryMap[exp.type] ?? 211;
+          const item_name = exp.type === "Custom"
+            ? exp.customType?.trim() || "Custom"
+            : exp.type;
+
+          return fetch(`${API_URL}/template_items/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              template_id: templateId,
+              category_id,
+              planned_amt: amount,
+              item_name
+            })
+          });
+        })
+        .filter((req) => req !== null) as Promise<Response>[];
+
+      const debtMap: { [key: string]: number } = {
+        "Mortgage": 301,
+        "Car Payment": 302,
+        "Student Loan": 303,
+        "Credit Card": 304,
+        "Personal Loan": 305,
+        "Other": 306
+      };
+
+      const debtFetches = debts
+        .map((debt) => {
+          const amount = parseFloat(debt.amount);
+          if (!debt.type || Number.isNaN(amount) || amount <= 0) {
+            return null;
+          }
+          const category_id = debtMap[debt.type] ?? 306;
+
+          return fetch(`${API_URL}/template_items/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              template_id: templateId,
+              category_id,
+              planned_amt: amount,
+              item_name: debt.type
+            })
+          });
+        })
+        .filter((req) => req !== null) as Promise<Response>[];
+
+      const donationFetches = donations
+        .map((donation) => {
+          const amount = parseFloat(donation.amount);
+          if (!donation.organization || Number.isNaN(amount) || amount <= 0) {
+            return null;
+          }
+
+          return fetch(`${API_URL}/template_items/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              template_id: templateId,
+              category_id: 401,
+              planned_amt: amount,
+              item_name: donation.organization
+            })
+          });
+        })
+        .filter((req) => req !== null) as Promise<Response>[];
+
+      const savingsFetches = savingsAccounts
+        .map((saving) => {
+          const amount = parseFloat(saving.amount);
+          if (!saving.accountName || Number.isNaN(amount) || amount <= 0) {
+            return null;
+          }
+
+          return fetch(`${API_URL}/template_items/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              template_id: templateId,
+              category_id: 501,
+              planned_amt: amount,
+              item_name: saving.accountName
+            })
+          });
+        })
+        .filter((req) => req !== null) as Promise<Response>[];
+
+      const investingFetches = investments
+        .map((investment) => {
+          const amount = parseFloat(investment.amount);
+          if (!investment.accountName || Number.isNaN(amount) || amount <= 0) {
+            return null;
+          }
+          return fetch(`${API_URL}/template_items/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              template_id: templateId,
+              category_id: 601,
+              planned_amt: amount,
+              item_name: investment.accountName
+            })
+          });
+        })
+        .filter((req) => req !== null) as Promise<Response>[];
+
+      const itemFetches = [...expenseFetches, ...debtFetches, ...donationFetches, ...savingsFetches, ...investingFetches];
+
+      if (itemFetches.length > 0) {
+        const itemResponses = await Promise.all(itemFetches);
+        for (const itemResponse of itemResponses) {
+          if (!itemResponse.ok) {
+            const text = await itemResponse.text();
+            throw new Error(`Failed saving template item: ${itemResponse.status} ${text}`);
+          }
+        }
+      }
+
+      setTemplateSaved(true);
+      // user confirmation before redirecting
+      alert("Template saved");
+      if (onTemplateSaved) {
+        onTemplateSaved();
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Unable to save template right now. Please try again.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-6">
@@ -239,7 +456,7 @@ export function TemplatePage() {
         {/* Progress indicator */}
         <div className="mb-8">
           <div className="flex items-center gap-2">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((step) => (
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((step) => (
               <div
                 key={step}
                 className={`h-2 flex-1 rounded-full ${
@@ -343,14 +560,13 @@ export function TemplatePage() {
                       <Label>Period</Label>
                       <Select
                         value={expense.period}
-                        onValueChange={(value: "month" | "year") => updateExpense(expense.id, "period", value)}
+                        onValueChange={(value: "month") => updateExpense(expense.id, "period", value)}
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="month">Monthly</SelectItem>
-                          <SelectItem value="year">Yearly</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -740,7 +956,7 @@ export function TemplatePage() {
         )}
 
         {/* Section 9: Retirement Question */}
-        {currentSection >= 9 && !showRetirementQuestion && (
+        {currentSection >= 9 && (
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Retirement Planning</CardTitle>
@@ -756,7 +972,7 @@ export function TemplatePage() {
                   variant="outline"
                   onClick={() => {
                     setShowRetirementQuestion(true);
-                    alert("Budget template created successfully! (Retirement calculator would be shown in a full implementation)");
+                    setCurrentSection(10);
                   }}
                   className="flex-1"
                 >
@@ -765,7 +981,7 @@ export function TemplatePage() {
                 <Button 
                   onClick={() => {
                     setShowRetirementQuestion(true);
-                    alert("Retirement calculator feature coming soon! Your budget template has been created.");
+                    setCurrentSection(10);
                   }}
                   className="bg-green-600 hover:bg-green-700 flex-1"
                 >
@@ -776,13 +992,39 @@ export function TemplatePage() {
           </Card>
         )}
 
-        {showRetirementQuestion && (
-          <Alert className="bg-green-50 border-green-200">
-            <AlertDescription>
-              <p className="text-gray-900">✓ Budget template created successfully!</p>
-              <p className="text-sm text-gray-600 mt-2">Your personalized budget is ready to help you manage your finances.</p>
-            </AlertDescription>
-          </Alert>
+        {/* Section 10: Save Template */}
+        {currentSection >= 10 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Name & Save Template</CardTitle>
+              <CardDescription>Give your template a name and save it</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="templateName">Template Name</Label>
+                <Input
+                  id="templateName"
+                  placeholder="Enter a name for your template"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                />
+              </div>
+
+              <Button
+                className="bg-green-600 hover:bg-green-700 w-full"
+                onClick={saveTemplate}
+                disabled={!templateName.trim()}
+              >
+                Save Template
+              </Button>
+
+              {templateSaved && (
+                <Alert className="bg-green-50 border-green-200">
+                  <AlertDescription>Template saved</AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

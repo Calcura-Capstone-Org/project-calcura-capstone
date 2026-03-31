@@ -49,16 +49,20 @@ def list_templates():
 def create_template(t: TemplateCreate):
     conn = get_connection()
     ts = now()
+    # Calculate next sequential template_id (first template_id is 1)
+    existing = conn.execute("SELECT MAX(template_id) FROM templates").fetchone()
+    next_id = (existing[0] or 0) + 1
+
     conn.execute(
         """
-        INSERT INTO templates (user_id, name, stage_id, is_default, created_on, updated_on)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO templates (template_id, user_id, name, stage_id, is_default, created_on, updated_on)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
-        (t.user_id, t.name, t.stage_id, t.is_default, ts, ts)
+        (next_id, t.user_id, t.name, t.stage_id, t.is_default, ts, ts)
     )
     conn.commit()
     conn.close()
-    return {"message": f"Template created for stage '{VALID_STAGES[t.stage_id]}'"}
+    return {"message": f"Template created for stage '{VALID_STAGES[t.stage_id]}'", "template_id": next_id}
 
 @router.get("/{template_id}")
 def get_template(template_id: int):

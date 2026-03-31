@@ -1,18 +1,15 @@
 /* Jaehyeong Shin wrote all 176 lines of code for this file */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
-import { TrendingUp, TrendingDown, DollarSign, CreditCard, PiggyBank, Target, Heart } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, CreditCard, PiggyBank, Target } from "lucide-react";
+import { calculateBudgetRecommendation } from "../utils/budgetRecommendations";
 
 /* API URL */
 const API_URL = import.meta.env.VITE_API_URL;
 
-//remove later
-console.log("API_URL =", API_URL);
-
-interface DashboardPageProps {
+interface FinancialGoalsProps {
   onCreateBudget?: () => void;
-  onFinancialGoals?: () => void;
 }
 
 interface TemplateOption {
@@ -70,16 +67,13 @@ const toMonthlyAmount = (item: TemplateItemApi): number => {
   return item.period === "year" ? roundToCents(amount / 12) : roundToCents(amount);
 };
 
-export function DashboardPage({ onCreateBudget, onFinancialGoals }: DashboardPageProps) {
+export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
   const [userName, setUserName] = useState("John");
   const [userTemplates, setUserTemplates] = useState<TemplateOption[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [incomeTotal, setIncomeTotal] = useState(0);
   const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>([]);
   const [debtRows, setDebtRows] = useState<DebtRow[]>([]);
-  const [monthlyDonationsTotal, setMonthlyDonationsTotal] = useState(0);
-  const [savingsAccountsTotal, setSavingsAccountsTotal] = useState(0);
-  const [investingAccountsTotal, setInvestingAccountsTotal] = useState(0);
   const [syncError, setSyncError] = useState("");
 
   const fetchJson = async <T,>(endpoint: string): Promise<T | null> => {
@@ -97,19 +91,19 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals }: DashboardPag
       }
       return (await response.json()) as T;
     } catch (err) {
-      console.warn(`DashboardPage: Failed to load ${endpoint}`, err);
+      console.warn(`FinancialGoals: Failed to load ${endpoint}`, err);
       return null;
     }
   };
 
   useEffect(() => {
-    const loadDashboardData = async () => {
+    const loadFinancialGoalData = async () => {
       let userId: string | null = null;
 
       try {
         userId = localStorage.getItem("user_id");
       } catch (err) {
-        console.warn("DashboardPage: Unable to read local user_id", err);
+        console.warn("FinancialGoals: Unable to read local user_id", err);
         return;
       }
 
@@ -136,13 +130,13 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals }: DashboardPag
           try {
             await syncTemplateData(String(ownTemplates[0].id));
           } catch (err) {
-            console.warn("DashboardPage: Unable to auto-load template data", err);
+            console.warn("FinancialGoals: Unable to auto-load template data", err);
           }
         }
       }
     };
 
-    void loadDashboardData();
+    void loadFinancialGoalData();
   }, []);
 
   useEffect(() => {
@@ -154,7 +148,7 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals }: DashboardPag
       try {
         await syncTemplateData(selectedTemplate);
       } catch (err) {
-        console.warn("DashboardPage: Unable to sync selected template", err);
+        console.warn("FinancialGoals: Unable to sync selected template", err);
       }
     };
 
@@ -195,9 +189,6 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals }: DashboardPag
 
     const expenseByName = new Map<string, number>();
     const debtByName = new Map<string, number>();
-    let donationsTotal = 0;
-    let savingsTotal = 0;
-    let investingTotal = 0;
 
     for (const item of selectedItems) {
       const itemCategoryId = Number(item.category_id);
@@ -220,24 +211,6 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals }: DashboardPag
       const isDebt = type ? type === "debt" : itemCategoryId >= 300 && itemCategoryId < 400;
       if (isDebt) {
         debtByName.set(rowName, roundToCents((debtByName.get(rowName) ?? 0) + plannedAmount));
-        continue;
-      }
-
-      const isDonation = itemCategoryId >= 400 && itemCategoryId < 500;
-      if (isDonation) {
-        donationsTotal = roundToCents(donationsTotal + plannedAmount);
-        continue;
-      }
-
-      const isSavings = type ? type === "savings" : itemCategoryId >= 500 && itemCategoryId < 600;
-      if (isSavings) {
-        savingsTotal = roundToCents(savingsTotal + plannedAmount);
-        continue;
-      }
-
-      const isInvesting = type ? type === "investments" : itemCategoryId >= 600 && itemCategoryId < 700;
-      if (isInvesting) {
-        investingTotal = roundToCents(investingTotal + plannedAmount);
       }
     }
 
@@ -258,12 +231,9 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals }: DashboardPag
 
     setExpenseRows(rows);
     setDebtRows(debtList);
-    setMonthlyDonationsTotal(donationsTotal);
-    setSavingsAccountsTotal(savingsTotal);
-    setInvestingAccountsTotal(investingTotal);
   };
 
-  const handleTemplateSync = async () => {
+  const handleUpdateIncome = async () => {
     if (!selectedTemplate) {
       alert("Please select a template first.");
       return;
@@ -273,12 +243,17 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals }: DashboardPag
       await syncTemplateData(selectedTemplate);
     } catch (err) {
       console.error(err);
-      setSyncError("Unable to refresh chart data from template items.");
+      setSyncError("Unable to refresh recommendation data from template items.");
     }
   };
 
   const totalExpenses = expenseRows.reduce((sum, item) => sum + item.amount, 0);
   const debtBalance = debtRows.reduce((sum, item) => sum + item.amount, 0);
+
+  const recommendation = useMemo(
+    () => calculateBudgetRecommendation(incomeTotal, expenseRows, debtRows),
+    [incomeTotal, expenseRows, debtRows]
+  );
 
   const budgetSummary = {
     totalIncome: incomeTotal,
@@ -359,6 +334,82 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals }: DashboardPag
           </Card>
         </div>
 
+        <Card className="p-6 mb-8">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <h2 className="text-xl text-gray-900">Recommended Budget (12-Month Debt Payoff)</h2>
+              <p className="text-sm text-gray-600 mt-1">{recommendation.message}</p>
+            </div>
+            <div
+              className={`text-sm px-3 py-1 rounded-full ${
+                recommendation.canPayoffIn12Months ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+              }`}
+            >
+              {recommendation.canPayoffIn12Months ? "On Track for 12 Months" : "12-Month Plan Not Feasible"}
+            </div>
+          </div>
+
+          {syncError && (
+            <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {syncError}
+            </div>
+          )}
+
+          <div className="grid md:grid-cols-4 gap-4 mb-6">
+            <div className="rounded-lg border bg-white p-4">
+              <p className="text-xs text-gray-500">Monthly Income</p>
+              <p className="text-xl text-gray-900 mt-1">${recommendation.incomeMonthly.toLocaleString()}</p>
+            </div>
+            <div className="rounded-lg border bg-white p-4">
+              <p className="text-xs text-gray-500">Debt Balance (Template)</p>
+              <p className="text-xl text-gray-900 mt-1">${recommendation.debtBalanceTotal.toLocaleString()}</p>
+            </div>
+            <div className="rounded-lg border bg-white p-4">
+              <p className="text-xs text-gray-500">Monthly Debt Target</p>
+              <p className="text-xl text-gray-900 mt-1">${recommendation.monthlyDebtTarget.toLocaleString()}</p>
+            </div>
+            <div className="rounded-lg border bg-white p-4">
+              <p className="text-xs text-gray-500">Plan Result</p>
+              <p className={`text-xl mt-1 ${recommendation.shortfallMonthly > 0 ? "text-red-600" : "text-green-700"}`}>
+                {recommendation.shortfallMonthly > 0
+                  ? `-$${recommendation.shortfallMonthly.toLocaleString()}`
+                  : `$${recommendation.remainingAfterPlan.toLocaleString()} left`}
+              </p>
+            </div>
+          </div>
+
+          {recommendation.recommendedExpenses.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-gray-500">
+                    <th className="py-2 pr-3">Expense</th>
+                    <th className="py-2 pr-3">Current</th>
+                    <th className="py-2 pr-3">Recommended</th>
+                    <th className="py-2">Change</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recommendation.recommendedExpenses.map((item) => (
+                    <tr key={item.name} className="border-b last:border-b-0">
+                      <td className="py-2 pr-3 text-gray-800">{item.name}</td>
+                      <td className="py-2 pr-3 text-gray-700">${item.amount.toLocaleString()}</td>
+                      <td className="py-2 pr-3 text-gray-900">${item.recommendedAmount.toLocaleString()}</td>
+                      <td className={`py-2 ${item.delta < 0 ? "text-red-600" : "text-green-700"}`}>
+                        {item.delta < 0 ? "-" : "+"}${Math.abs(item.delta).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="rounded border bg-gray-50 px-3 py-2 text-sm text-gray-600">
+              No expense data found for this template. Add expenses to receive recommendations.
+            </div>
+          )}
+        </Card>
+
         {/* Main Content Grid */}
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Spending by Category */}
@@ -380,7 +431,11 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals }: DashboardPag
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className={`${category.color} h-2 rounded-full transition-all`}
-                      style={{ width: `${(category.amount / category.budget) * 100}%` }}
+                      style={{
+                        width: `${category.budget > 0
+                          ? Math.min((category.amount / category.budget) * 100, 100)
+                          : 0}%`,
+                      }}
                     />
                   </div>
                 </div>
@@ -392,37 +447,31 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals }: DashboardPag
           <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl text-gray-900">Template Data Source</h2>
-              <Button variant="ghost" size="sm" onClick={handleTemplateSync}>Sync</Button>
+              <Button variant="ghost" size="sm" onClick={handleUpdateIncome}>Sync</Button>
             </div>
 
             <div className="space-y-4">
-              {userTemplates.length > 0 ? (
-                <select
-                  className="w-full border rounded px-3 py-2"
-                  value={selectedTemplate}
-                  onChange={(e) => setSelectedTemplate(e.target.value)}
-                >
-                  <option value="" disabled>
-                    Select a template
+            {userTemplates.length > 0 ? (
+              <select
+                className="w-full border rounded px-3 py-2"
+                value={selectedTemplate}
+                onChange={(e) => setSelectedTemplate(e.target.value)}
+              >
+                <option value="" disabled>
+                  Select a template
+                </option>
+                {userTemplates.map((template) => (
+                  <option key={template.id} value={String(template.id)}>
+                    {template.name}
                   </option>
-                  {userTemplates.map((template) => (
-                    <option key={template.id} value={String(template.id)}>
-                      {template.name}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <div className="text-sm text-gray-500">No templates found for your account.</div>
-              )}
-            </div>
-
-            {syncError && (
-              <div className="mt-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                {syncError}
-              </div>
+                ))}
+              </select>
+            ) : (
+              <div className="text-sm text-gray-500">No templates found for your account.</div>
             )}
+          </div>
 
-            <Button variant="outline" className="w-full mt-4" onClick={handleTemplateSync}>
+            <Button variant="outline" className="w-full mt-4" onClick={handleUpdateIncome}>
               Update
             </Button>
 
@@ -449,65 +498,6 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals }: DashboardPag
         </div>
 
         {/* Quick Actions */}
-        <div className="grid md:grid-cols-4 gap-6 mt-8">
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Debt Balance</span>
-              <CreditCard className="w-5 h-5 text-red-600" />
-            </div>
-            <div className="text-2xl text-gray-900">
-              ${debtBalance.toLocaleString()}
-            </div>
-            <div className="flex items-center gap-1 mt-2 text-sm text-red-600">
-              <TrendingDown size={16} />
-              <span>Current monthly debt load</span>
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Monthly Donations</span>
-              <Heart className="w-5 h-5 text-pink-600" />
-            </div>
-            <div className="text-2xl text-gray-900">
-              ${monthlyDonationsTotal.toLocaleString()}
-            </div>
-            <div className="flex items-center gap-1 mt-2 text-sm text-pink-600">
-              <TrendingUp size={16} />
-              <span>Giving planned this month</span>
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Savings Accounts</span>
-              <PiggyBank className="w-5 h-5 text-green-600" />
-            </div>
-            <div className="text-2xl text-gray-900">
-              ${savingsAccountsTotal.toLocaleString()}
-            </div>
-            <div className="flex items-center gap-1 mt-2 text-sm text-green-600">
-              <TrendingUp size={16} />
-              <span>Total monthly savings</span>
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Investing Accounts</span>
-              <DollarSign className="w-5 h-5 text-blue-600" />
-            </div>
-            <div className="text-2xl text-gray-900">
-              ${investingAccountsTotal.toLocaleString()}
-            </div>
-            <div className="flex items-center gap-1 mt-2 text-sm text-blue-600">
-              <TrendingUp size={16} />
-              <span>Total monthly investing</span>
-            </div>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
         <div className="grid md:grid-cols-3 gap-6 mt-8">
           <Card
             className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
@@ -517,7 +507,7 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals }: DashboardPag
             <p className="text-sm text-gray-600">Start a new budget template</p>
           </Card>
 
-          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => onFinancialGoals?.()}>
+          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
             <h3 className="text-lg text-gray-900 mb-2">Financial Goals</h3>
             <p className="text-sm text-gray-600">Set and track your goals</p>
           </Card>

@@ -13,8 +13,9 @@ import { AboutPage } from "./components/AboutPage";
 import { ContactPage } from "./components/ContactPage";
 import { SignUpPage } from "./components/SignUpPage";
 import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
+import { FinancialGoals } from "./components/FinancialGoals";
 
-type PageView = "landing" | "template" | "login" | "account" | "dashboard" | "about" | "contact" | "signup" | "forgotPassword";
+type PageView = "landing" | "template" | "login" | "account" | "dashboard" | "financialgoals" | "about" | "contact" | "signup" | "forgotPassword";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<PageView>("landing");
@@ -75,7 +76,10 @@ export default function App() {
           onContactClick={() => setCurrentPage("contact")}
           isLoggedIn={isLoggedIn}
         />
-        <DashboardPage onCreateBudget={() => setCurrentPage("template")} />
+        <DashboardPage
+        onCreateBudget={() => setCurrentPage("template")}
+        onFinancialGoals={() => setCurrentPage("financialgoals")}
+      />
         <Footer 
           onAboutClick={() => setCurrentPage("about")}
           onContactClick={() => setCurrentPage("contact")}
@@ -97,6 +101,27 @@ export default function App() {
           isLoggedIn={isLoggedIn}
         />
         <AccountPage />
+        <Footer 
+          onAboutClick={() => setCurrentPage("about")}
+          onContactClick={() => setCurrentPage("contact")}
+        />
+      </div>
+    );
+  }
+
+  if (currentPage === "financialgoals") {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header 
+          onLoginClick={() => setCurrentPage("login")}
+          onHomeClick={() => setCurrentPage("landing")}
+          onAccountClick={() => setCurrentPage("account")}
+          onDashboardClick={() => setCurrentPage("dashboard")}
+          onAboutClick={() => setCurrentPage("about")}
+          onContactClick={() => setCurrentPage("contact")}
+          isLoggedIn={isLoggedIn}
+        />
+        <FinancialGoals onCreateBudget={() => setCurrentPage("template")} />
         <Footer 
           onAboutClick={() => setCurrentPage("about")}
           onContactClick={() => setCurrentPage("contact")}
@@ -159,7 +184,7 @@ export default function App() {
           onContactClick={() => setCurrentPage("contact")}
           isLoggedIn={isLoggedIn}
         />
-        <TemplatePage />
+        <TemplatePage onTemplateSaved={() => setCurrentPage("dashboard")} />
         <Footer 
           onAboutClick={() => setCurrentPage("about")}
           onContactClick={() => setCurrentPage("contact")}
