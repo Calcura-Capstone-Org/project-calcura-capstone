@@ -9,7 +9,11 @@ const API_URL = import.meta.env.VITE_API_URL;
 //remove later
 console.log("API_URL =", API_URL);
 
-export function DashboardPage() {
+interface DashboardPageProps {
+  onCreateBudget?: () => void;
+}
+
+export function DashboardPage({ onCreateBudget }: DashboardPageProps) {
   // Mock data for the dashboard
   const budgetSummary = {
     totalIncome: 5000,
@@ -161,7 +165,10 @@ export function DashboardPage() {
 
         {/* Quick Actions */}
         <div className="grid md:grid-cols-3 gap-6 mt-8">
-          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
+          <Card
+            className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => onCreateBudget?.()}
+          >
             <h3 className="text-lg text-gray-900 mb-2">Create New Budget</h3>
             <p className="text-sm text-gray-600">Start a new budget template</p>
           </Card>

@@ -1,5 +1,5 @@
 /*Joseph Spreckels wrote 853 lines of code for this file */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -50,11 +50,11 @@ interface Investment {
 
 export function TemplatePage() {
   const [currentSection, setCurrentSection] = useState(1);
+  const [activeUserEmail, setActiveUserEmail] = useState("");
   
   // Income section
-  const [incomeType, setIncomeType] = useState<"takehome" | "annual" | "">("");
+  const [incomeType, setIncomeType] = useState<"takehome" | "">("");
   const [takeHomePay, setTakeHomePay] = useState("");
-  const [annualIncome, setAnnualIncome] = useState("");
   
   // Tax section
   const [filingStatus, setFilingStatus] = useState("");
@@ -78,6 +78,13 @@ export function TemplatePage() {
   
   // Retirement question
   const [showRetirementQuestion, setShowRetirementQuestion] = useState(false);
+
+  useEffect(() => {
+    const userEmail = localStorage.getItem("email");
+    if (userEmail) {
+      setActiveUserEmail(userEmail);
+    }
+  }, []);
 
   const commonExpenses = [
     "Housing/Rent",
@@ -223,6 +230,9 @@ export function TemplatePage() {
       <div className="max-w-4xl mx-auto px-6">
         <div className="mb-8">
           <h1 className="text-gray-900 mb-2">Create Your Budget Template</h1>
+          {activeUserEmail && (
+            <p className="text-sm text-gray-500 mb-1">Signed in as: {activeUserEmail}</p>
+          )}
           <p className="text-gray-600">Let's build a personalized budget based on your financial situation</p>
         </div>
 
@@ -249,21 +259,14 @@ export function TemplatePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-4">
-                <Label>Do you know your take-home pay or annual income?</Label>
+                <Label>Take-home pay</Label>
                 <div className="flex gap-4">
                   <Button
                     variant={incomeType === "takehome" ? "default" : "outline"}
                     onClick={() => setIncomeType("takehome")}
                     className={incomeType === "takehome" ? "bg-green-600 hover:bg-green-700" : ""}
                   >
-                    Take-Home Pay (Monthly)
-                  </Button>
-                  <Button
-                    variant={incomeType === "annual" ? "default" : "outline"}
-                    onClick={() => setIncomeType("annual")}
-                    className={incomeType === "annual" ? "bg-green-600 hover:bg-green-700" : ""}
-                  >
-                    Annual Income
+                    Monthly Take-Home
                   </Button>
                 </div>
               </div>
@@ -281,20 +284,7 @@ export function TemplatePage() {
                 </div>
               )}
 
-              {incomeType === "annual" && (
-                <div className="space-y-2">
-                  <Label htmlFor="annual">Annual Income (Before Taxes)</Label>
-                  <Input
-                    id="annual"
-                    type="number"
-                    placeholder="Enter your annual income"
-                    value={annualIncome}
-                    onChange={(e) => setAnnualIncome(e.target.value)}
-                  />
-                </div>
-              )}
-
-              {((incomeType === "takehome" && takeHomePay) || (incomeType === "annual" && annualIncome)) && (
+              {(incomeType === "takehome" && takeHomePay) && (
                 <Button 
                   onClick={() => setCurrentSection(2)}
                   className="bg-green-600 hover:bg-green-700"
@@ -306,67 +296,7 @@ export function TemplatePage() {
           </Card>
         )}
 
-        {/* Section 2: Tax Calculator (only if annual income) */}
-        {currentSection >= 2 && incomeType === "annual" && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Tax Calculator</CardTitle>
-              <CardDescription>Let's calculate your take-home pay</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="filing-status">Filing Status</Label>
-                <Select value={filingStatus} onValueChange={setFilingStatus}>
-                  <SelectTrigger id="filing-status">
-                    <SelectValue placeholder="Select filing status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="single">Single</SelectItem>
-                    <SelectItem value="married">Married Filing Jointly</SelectItem>
-                    <SelectItem value="married-separate">Married Filing Separately</SelectItem>
-                    <SelectItem value="head">Head of Household</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
 
-              {filingStatus && (
-                <Button 
-                  onClick={calculateTakeHome}
-                  variant="outline"
-                >
-                  Calculate Take-Home Pay
-                </Button>
-              )}
-
-              {calculatedMonthlyTakeHome && calculatedYearlyTakeHome && (
-                <Alert className="bg-green-50 border-green-200">
-                  <AlertDescription>
-                    <div className="space-y-2">
-                      <p className="text-gray-900">
-                        Estimated Monthly Take-Home Pay: <span className="text-green-600">${calculatedMonthlyTakeHome}</span>
-                      </p>
-                      <p className="text-gray-900">
-                        Estimated Yearly Take-Home Pay: <span className="text-green-600">${calculatedYearlyTakeHome}</span>
-                      </p>
-                      <p className="text-sm text-gray-500 mt-2">
-                        This is a simplified estimate. Actual take-home may vary based on state taxes, deductions, and other factors.
-                      </p>
-                    </div>
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {calculatedMonthlyTakeHome && (
-                <Button 
-                  onClick={() => setCurrentSection(3)}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  Continue <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        )}
 
         {/* Auto-advance to section 3 if take-home was selected */}
         {currentSection === 2 && incomeType === "takehome" && setCurrentSection(3)}

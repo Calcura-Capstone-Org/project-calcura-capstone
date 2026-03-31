@@ -75,7 +75,7 @@ export default function App() {
           onContactClick={() => setCurrentPage("contact")}
           isLoggedIn={isLoggedIn}
         />
-        <DashboardPage />
+        <DashboardPage onCreateBudget={() => setCurrentPage("template")} />
         <Footer 
           onAboutClick={() => setCurrentPage("about")}
           onContactClick={() => setCurrentPage("contact")}
