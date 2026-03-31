@@ -1,4 +1,5 @@
 /* Jaehyeong Shin wrote all 176 lines of code for this file */
+import { useEffect, useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { TrendingUp, TrendingDown, DollarSign, CreditCard, PiggyBank, Target } from "lucide-react";
@@ -14,6 +15,30 @@ interface DashboardPageProps {
 }
 
 export function DashboardPage({ onCreateBudget }: DashboardPageProps) {
+  const [userName, setUserName] = useState("John");
+
+  useEffect(() => {
+    const userId = localStorage.getItem("user_id");
+    if (!userId) {
+      return;
+    }
+
+    fetch(`${API_URL}/users`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch users");
+        return res.json();
+      })
+      .then((users: any[]) => {
+        const user = users.find((u) => String(u.user_id) === String(userId));
+        if (user?.name) {
+          setUserName(user.name);
+        }
+      })
+      .catch((err) => {
+        console.warn("DashboardPage: Could not load user name", err);
+      });
+  }, []);
+
   // Mock data for the dashboard
   const budgetSummary = {
     totalIncome: 5000,
@@ -46,7 +71,7 @@ export function DashboardPage({ onCreateBudget }: DashboardPageProps) {
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Welcome Header */}
         <div className="mb-8">
-          <h1 className="text-3xl text-gray-900 mb-2">Welcome back, John!</h1>
+          <h1 className="text-3xl text-gray-900 mb-2">Welcome back, {userName}!</h1>
           <p className="text-gray-600">Here's your financial overview for October 2024</p>
         </div>
 

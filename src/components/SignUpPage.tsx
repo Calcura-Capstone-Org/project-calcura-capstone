@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import logoImage from "../assets/logoImage.png";
 
-const logoImage = "";
 const API_URL = import.meta.env.VITE_API_URL;
 
 interface SignUpPageProps {

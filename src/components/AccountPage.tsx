@@ -16,7 +16,6 @@ console.log("API_URL =", API_URL);
 export function AccountPage() {
   const [name, setName] = useState("John Doe");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("+1 (555) 123-4567");
 
   useEffect(() => {
     const userEmail = localStorage.getItem("email");
@@ -87,6 +86,41 @@ export function AccountPage() {
     localStorage.removeItem("email");
     alert("Signed out successfully.");
     window.location.href = "/";
+  };
+
+  const handleSaveChanges = async () => {
+    const userId = localStorage.getItem("user_id");
+    if (!userId) {
+      alert("No active user found. Please log in again.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/users/${userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        console.error("Failed to update user", errorData);
+        alert(`Unable to save changes: ${errorData?.detail || response.statusText}`);
+        return;
+      }
+
+      const result = await response.json();
+      setEmail(email);
+      setName(name);
+      localStorage.setItem("email", email);
+      alert("Profile updated successfully.");
+      console.log("User updated", result);
+    } catch (error) {
+      console.error("Network error updating user", error);
+      alert("Network error while saving changes. Please try again.");
+    }
   };
 
   return (
@@ -169,19 +203,8 @@ export function AccountPage() {
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-
                 <div className="flex gap-3 pt-4">
-                  <Button className="bg-green-600 hover:bg-green-700">
+                  <Button className="bg-green-600 hover:bg-green-700" onClick={handleSaveChanges}>
                     Save Changes
                   </Button>
                   <Button variant="outline">

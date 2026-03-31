@@ -1,6 +1,7 @@
 #Lines 1 - 45 written by Emma Wikingstad
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from typing import Optional
 from databasev1 import get_connection
 import hashlib
 import time
@@ -67,6 +68,10 @@ def create_user(user: UserCreate):
     conn.close()
     return {"Message": "User created successfully", "user_id": next_user_id}
 
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+
 @router.delete("/{user_id}")
 def delete_user(user_id: int):
     conn = get_connection()
@@ -79,6 +84,48 @@ def delete_user(user_id: int):
         raise HTTPException(status_code=404, detail="User not found")
 
     return {"message": "User deleted successfully"}
+
+@router.put("/{user_id}")
+def update_user(user_id: int, user: UserUpdate):
+    if user.name is None and user.email is None:
+        raise HTTPException(status_code=400, detail="No updatable fields provided")
+
+    conn = get_connection()
+    existing_user = conn.execute("SELECT * FROM Users WHERE user_id = ?", (user_id,)).fetchone()
+    if not existing_user:
+        conn.close()
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if user.email:
+        existing_email = conn.execute("SELECT user_id FROM Users WHERE email = ? AND user_id != ?", (user.email, user_id)).fetchone()
+        if existing_email:
+            conn.close()
+            raise HTTPException(status_code=409, detail="Email already in use")
+
+    update_fields = []
+    update_values = []
+
+    if user.name is not None:
+        update_fields.append("name = ?")
+        update_values.append(user.name)
+
+    if user.email is not None:
+        update_fields.append("email = ?")
+        update_values.append(user.email)
+
+    update_fields.append("updated_on = ?")
+    update_values.append(now_timestamp())
+
+    update_values.append(user_id)
+
+    conn.execute(
+        f"UPDATE Users SET {', '.join(update_fields)} WHERE user_id = ?",
+        update_values,
+    )
+    conn.commit()
+    conn.close()
+
+    return {"message": "User updated successfully", "user_id": user_id}
 
 # Login Endpoint
 
