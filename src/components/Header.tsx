@@ -11,6 +11,7 @@ console.log("API_URL =", API_URL);
 
 interface HeaderProps {
   onLoginClick?: () => void;
+  onSignUpClick?: () => void;
   onHomeClick?: () => void;
   onAccountClick?: () => void;
   onDashboardClick?: () => void;
@@ -20,7 +21,7 @@ interface HeaderProps {
   isLoggedIn?: boolean;
 }
 
-export function Header({ onLoginClick, onHomeClick, onAccountClick, onDashboardClick, onTemplatesClick, onAboutClick, onContactClick, isLoggedIn = false }: HeaderProps) {
+export function Header({ onLoginClick, onSignUpClick, onHomeClick, onAccountClick, onDashboardClick, onTemplatesClick, onAboutClick, onContactClick, isLoggedIn = false }: HeaderProps) {
   return (
     <header className="bg-white border-b">
       <div className="max-w-7xl mx-auto px-6 py-4">
@@ -86,7 +87,7 @@ export function Header({ onLoginClick, onHomeClick, onAccountClick, onDashboardC
                 <Button variant="outline" onClick={onLoginClick}>
                   Login
                 </Button>
-                <Button className="bg-green-600 hover:bg-green-700" onClick={onLoginClick}>
+                <Button className="bg-green-600 hover:bg-green-700" onClick={onSignUpClick}>
                   Sign Up Free
                 </Button>
               </>

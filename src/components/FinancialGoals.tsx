@@ -1,9 +1,8 @@
 /* Jaehyeong Shin wrote all 176 lines of code for this file */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { TrendingUp, TrendingDown, DollarSign, CreditCard, PiggyBank, Target } from "lucide-react";
-import { calculateBudgetRecommendation } from "../utils/budgetRecommendations";
 
 /* API URL */
 const API_URL = import.meta.env.VITE_API_URL;
@@ -74,6 +73,9 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
   const [incomeTotal, setIncomeTotal] = useState(0);
   const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>([]);
   const [debtRows, setDebtRows] = useState<DebtRow[]>([]);
+  const [givingTotal, setGivingTotal] = useState(0);
+  const [savingsTotal, setSavingsTotal] = useState(0);
+  const [investingTotal, setInvestingTotal] = useState(0);
   const [syncError, setSyncError] = useState("");
 
   const fetchJson = async <T,>(endpoint: string): Promise<T | null> => {
@@ -189,6 +191,9 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
 
     const expenseByName = new Map<string, number>();
     const debtByName = new Map<string, number>();
+    let givingSum = 0;
+    let savingsSum = 0;
+    let investingSum = 0;
 
     for (const item of selectedItems) {
       const itemCategoryId = Number(item.category_id);
@@ -211,6 +216,24 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
       const isDebt = type ? type === "debt" : itemCategoryId >= 300 && itemCategoryId < 400;
       if (isDebt) {
         debtByName.set(rowName, roundToCents((debtByName.get(rowName) ?? 0) + plannedAmount));
+        continue;
+      }
+
+      const isGiving = itemCategoryId >= 400 && itemCategoryId < 500;
+      if (isGiving) {
+        givingSum = roundToCents(givingSum + plannedAmount);
+        continue;
+      }
+
+      const isSavings = type ? type === "savings" : itemCategoryId >= 500 && itemCategoryId < 600;
+      if (isSavings) {
+        savingsSum = roundToCents(savingsSum + plannedAmount);
+        continue;
+      }
+
+      const isInvesting = type ? type === "investments" : itemCategoryId >= 600 && itemCategoryId < 700;
+      if (isInvesting) {
+        investingSum = roundToCents(investingSum + plannedAmount);
       }
     }
 
@@ -231,6 +254,9 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
 
     setExpenseRows(rows);
     setDebtRows(debtList);
+    setGivingTotal(givingSum);
+    setSavingsTotal(savingsSum);
+    setInvestingTotal(investingSum);
   };
 
   const handleUpdateIncome = async () => {
@@ -249,10 +275,44 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
 
   const totalExpenses = expenseRows.reduce((sum, item) => sum + item.amount, 0);
   const debtBalance = debtRows.reduce((sum, item) => sum + item.amount, 0);
+  const housingExpense = expenseRows.find(
+    (expense) => expense.name.trim().toLowerCase() === "housing/rent"
+  )?.amount ?? 0;
+  const housingTarget = roundToCents(incomeTotal * 0.25);
+  const recommendedHousing = housingExpense > 0 && housingExpense < housingTarget
+    ? housingExpense
+    : housingTarget;
+  const housingDelta = roundToCents(recommendedHousing - housingExpense);
+  const hasHousingData = housingExpense > 0;
+  const givingTarget = roundToCents(incomeTotal * 0.1);
+  const recommendedGiving = givingTotal > givingTarget ? givingTotal : givingTarget;
+  const givingDelta = roundToCents(recommendedGiving - givingTotal);
+  const givingMeetsTarget = givingTotal >= givingTarget;
+  const savingsTarget = roundToCents(incomeTotal * 0.1);
+  const recommendedSavings = savingsTotal > savingsTarget ? savingsTotal : savingsTarget;
+  const savingsDelta = roundToCents(recommendedSavings - savingsTotal);
+  const savingsMeetsTarget = savingsTotal >= savingsTarget;
+  const investingTarget = roundToCents(incomeTotal * 0.1);
+  const recommendedInvesting = investingTotal > investingTarget ? investingTotal : investingTarget;
+  const investingDelta = roundToCents(recommendedInvesting - investingTotal);
+  const investingMeetsTarget = investingTotal >= investingTarget;
+  const requiredExpensesTotal = roundToCents(
+    expenseRows
+      .filter((expense) => expense.name.trim().toLowerCase() !== "housing/rent")
+      .reduce((sum, expense) => sum + expense.amount, 0)
+  );
+  const requiredExpensesTarget = roundToCents(incomeTotal * 0.25);
+  const recommendedRequiredExpenses = requiredExpensesTotal > requiredExpensesTarget
+    ? requiredExpensesTarget
+    : requiredExpensesTotal;
+  const requiredExpensesDelta = roundToCents(recommendedRequiredExpenses - requiredExpensesTotal);
+  const requiredExpensesMeetsTarget = requiredExpensesTotal <= requiredExpensesTarget;
+  const remainingRecommendedFunds = roundToCents(
+    incomeTotal - recommendedHousing - recommendedRequiredExpenses - recommendedGiving - recommendedSavings - recommendedInvesting
+  );
 
-  const recommendation = useMemo(
-    () => calculateBudgetRecommendation(incomeTotal, expenseRows, debtRows),
-    [incomeTotal, expenseRows, debtRows]
+  const finalBalance = roundToCents(
+    incomeTotal - totalExpenses - debtBalance - givingTotal - savingsTotal - investingTotal
   );
 
   const budgetSummary = {
@@ -322,14 +382,15 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
 
           <Card className="p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Savings Progress</span>
-              <PiggyBank className="w-5 h-5 text-green-600" />
+              <span className="text-sm text-gray-600">Final Balance</span>
+              <DollarSign className="w-5 h-5 text-indigo-600" />
             </div>
             <div className="text-2xl text-gray-900">
-              ${budgetSummary.currentSavings.toLocaleString()}
+              ${finalBalance.toLocaleString()}
             </div>
-            <div className="text-sm text-gray-600 mt-2">
-              {Math.round((budgetSummary.currentSavings / budgetSummary.savingsGoal) * 100)}% of goal
+            <div className={`flex items-center gap-1 mt-2 text-sm ${finalBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
+              {finalBalance >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+              <span>Income minus all tracked costs</span>
             </div>
           </Card>
         </div>
@@ -337,16 +398,23 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
         <Card className="p-6 mb-8">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
-              <h2 className="text-xl text-gray-900">Recommended Budget (12-Month Debt Payoff)</h2>
-              <p className="text-sm text-gray-600 mt-1">{recommendation.message}</p>
+              <h2 className="text-xl text-gray-900">Recommended Budget</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Housing and rent should generally stay near 25% of monthly income unless your current amount is already lower.
+              </p>
             </div>
             <div
               className={`text-sm px-3 py-1 rounded-full ${
-                recommendation.canPayoffIn12Months ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                hasHousingData && housingExpense <= housingTarget ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
               }`}
             >
-              {recommendation.canPayoffIn12Months ? "On Track for 12 Months" : "12-Month Plan Not Feasible"}
+              {hasHousingData && housingExpense <= housingTarget ? "Housing Within Target" : "Housing Above Target"}
             </div>
+          </div>
+
+          <div className="rounded-lg border bg-white p-5 mb-6">
+            <p className="text-xs text-gray-500">Total Income</p>
+            <p className="text-3xl text-gray-900 mt-1">${incomeTotal.toLocaleString()}</p>
           </div>
 
           {syncError && (
@@ -355,58 +423,159 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
             </div>
           )}
 
-          <div className="grid md:grid-cols-4 gap-4 mb-6">
+          <div className="grid md:grid-cols-3 gap-4 mb-6">
             <div className="rounded-lg border bg-white p-4">
-              <p className="text-xs text-gray-500">Monthly Income</p>
-              <p className="text-xl text-gray-900 mt-1">${recommendation.incomeMonthly.toLocaleString()}</p>
+              <p className="text-xs text-gray-500">Current Housing/Rent</p>
+              <p className="text-xl text-gray-900 mt-1">${housingExpense.toLocaleString()}</p>
             </div>
             <div className="rounded-lg border bg-white p-4">
-              <p className="text-xs text-gray-500">Debt Balance (Template)</p>
-              <p className="text-xl text-gray-900 mt-1">${recommendation.debtBalanceTotal.toLocaleString()}</p>
+              <p className="text-xs text-gray-500">Recommended Housing/Rent</p>
+              <p className="text-xl text-gray-900 mt-1">${recommendedHousing.toLocaleString()}</p>
             </div>
             <div className="rounded-lg border bg-white p-4">
-              <p className="text-xs text-gray-500">Monthly Debt Target</p>
-              <p className="text-xl text-gray-900 mt-1">${recommendation.monthlyDebtTarget.toLocaleString()}</p>
-            </div>
-            <div className="rounded-lg border bg-white p-4">
-              <p className="text-xs text-gray-500">Plan Result</p>
-              <p className={`text-xl mt-1 ${recommendation.shortfallMonthly > 0 ? "text-red-600" : "text-green-700"}`}>
-                {recommendation.shortfallMonthly > 0
-                  ? `-$${recommendation.shortfallMonthly.toLocaleString()}`
-                  : `$${recommendation.remainingAfterPlan.toLocaleString()} left`}
+              <p className="text-xs text-gray-500">Adjustment Needed</p>
+              <p className={`text-xl mt-1 ${housingDelta < 0 ? "text-red-600" : "text-green-700"}`}>
+                {housingDelta < 0 ? `-$${Math.abs(housingDelta).toLocaleString()}` : `$${housingDelta.toLocaleString()}`}
               </p>
             </div>
           </div>
 
-          {recommendation.recommendedExpenses.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left text-gray-500">
-                    <th className="py-2 pr-3">Expense</th>
-                    <th className="py-2 pr-3">Current</th>
-                    <th className="py-2 pr-3">Recommended</th>
-                    <th className="py-2">Change</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recommendation.recommendedExpenses.map((item) => (
-                    <tr key={item.name} className="border-b last:border-b-0">
-                      <td className="py-2 pr-3 text-gray-800">{item.name}</td>
-                      <td className="py-2 pr-3 text-gray-700">${item.amount.toLocaleString()}</td>
-                      <td className="py-2 pr-3 text-gray-900">${item.recommendedAmount.toLocaleString()}</td>
-                      <td className={`py-2 ${item.delta < 0 ? "text-red-600" : "text-green-700"}`}>
-                        {item.delta < 0 ? "-" : "+"}${Math.abs(item.delta).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {incomeTotal > 0 ? (
+            <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
+              {hasHousingData ? (
+                housingExpense <= housingTarget
+                  ? `Your current housing/rent spending is already within the recommended limit, so the recommended amount stays at $${recommendedHousing.toLocaleString()}.`
+                  : `To stay near 25% of income, reduce housing/rent from $${housingExpense.toLocaleString()} to about $${recommendedHousing.toLocaleString()}.`
+              ) : (
+                `No Housing/Rent expense was found in this template. Based on total income, the recommended housing/rent amount is $${recommendedHousing.toLocaleString()}.`
+              )}
             </div>
           ) : (
             <div className="rounded border bg-gray-50 px-3 py-2 text-sm text-gray-600">
-              No expense data found for this template. Add expenses to receive recommendations.
+              No income data found for this template. Add income to receive a housing recommendation.
             </div>
+          )}
+
+          {incomeTotal > 0 && (
+            <>
+              <div className="grid md:grid-cols-4 gap-4 mt-6 mb-6">
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Current Required Expenses</p>
+                  <p className="text-xl text-gray-900 mt-1">${requiredExpensesTotal.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Required Expenses Target</p>
+                  <p className="text-xl text-gray-900 mt-1">${requiredExpensesTarget.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Recommended Required Expenses</p>
+                  <p className="text-xl text-gray-900 mt-1">${recommendedRequiredExpenses.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Expenses Adjustment</p>
+                  <p className={`text-xl mt-1 ${requiredExpensesDelta < 0 ? "text-red-600" : "text-green-700"}`}>
+                    {requiredExpensesDelta < 0 ? `-$${Math.abs(requiredExpensesDelta).toLocaleString()}` : `$${requiredExpensesDelta.toLocaleString()}`}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
+                {requiredExpensesMeetsTarget
+                  ? `Your required expenses are already within the 25% recommended limit at $${requiredExpensesTotal.toLocaleString()}.`
+                  : `To meet the 25% guideline, reduce required expenses from $${requiredExpensesTotal.toLocaleString()} to about $${recommendedRequiredExpenses.toLocaleString()}.`}
+              </div>
+
+              <div className="grid md:grid-cols-4 gap-4 mt-6 mb-6">
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Current Giving</p>
+                  <p className="text-xl text-gray-900 mt-1">${givingTotal.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Giving Target</p>
+                  <p className="text-xl text-gray-900 mt-1">${givingTarget.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Recommended Giving</p>
+                  <p className="text-xl text-gray-900 mt-1">${recommendedGiving.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Giving Adjustment</p>
+                  <p className={`text-xl mt-1 ${givingDelta > 0 ? "text-amber-600" : "text-green-700"}`}>
+                    {givingDelta > 0 ? `+$${givingDelta.toLocaleString()}` : `$${givingDelta.toLocaleString()}`}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
+                {givingMeetsTarget
+                  ? `Your current giving already meets or exceeds the 10% recommendation, so the recommended amount stays at $${recommendedGiving.toLocaleString()}.`
+                  : `A recommended giving amount is $${recommendedGiving.toLocaleString()}, which is 10% of total income.`}
+              </div>
+
+              <div className="grid md:grid-cols-4 gap-4 mt-6 mb-6">
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Current Savings</p>
+                  <p className="text-xl text-gray-900 mt-1">${savingsTotal.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Savings Target</p>
+                  <p className="text-xl text-gray-900 mt-1">${savingsTarget.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Recommended Savings</p>
+                  <p className="text-xl text-gray-900 mt-1">${recommendedSavings.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Savings Adjustment</p>
+                  <p className={`text-xl mt-1 ${savingsDelta > 0 ? "text-amber-600" : "text-green-700"}`}>
+                    {savingsDelta > 0 ? `+$${savingsDelta.toLocaleString()}` : `$${savingsDelta.toLocaleString()}`}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
+                {savingsMeetsTarget
+                  ? `Your current savings already meet or exceed the 10% recommendation, so the recommended amount stays at $${recommendedSavings.toLocaleString()}.`
+                  : `A recommended savings amount is $${recommendedSavings.toLocaleString()}, which is 10% of total income.`}
+              </div>
+
+              <div className="grid md:grid-cols-4 gap-4 mt-6 mb-6">
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Current Investing</p>
+                  <p className="text-xl text-gray-900 mt-1">${investingTotal.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Investing Target</p>
+                  <p className="text-xl text-gray-900 mt-1">${investingTarget.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Recommended Investing</p>
+                  <p className="text-xl text-gray-900 mt-1">${recommendedInvesting.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Investing Adjustment</p>
+                  <p className={`text-xl mt-1 ${investingDelta > 0 ? "text-amber-600" : "text-green-700"}`}>
+                    {investingDelta > 0 ? `+$${investingDelta.toLocaleString()}` : `$${investingDelta.toLocaleString()}`}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
+                {investingMeetsTarget
+                  ? `Your current investing already meets or exceeds the 10% recommendation, so the recommended amount stays at $${recommendedInvesting.toLocaleString()}.`
+                  : `A recommended investing amount is $${recommendedInvesting.toLocaleString()}, which is 10% of total income.`}
+              </div>
+
+              <div className="rounded-lg border bg-white px-5 py-4 mt-6 text-gray-900">
+                <p className="text-xs text-gray-500">Remaining Funds Based on Recommendations</p>
+                <p className={`text-3xl mt-1 ${remainingRecommendedFunds < 0 ? "text-red-600" : "text-gray-900"}`}>
+                  ${remainingRecommendedFunds.toLocaleString()}
+                </p>
+                <p className="text-sm text-gray-600 mt-2">
+                  Total income minus recommended housing/rent, required expenses, giving, savings, and investing.
+                </p>
+              </div>
+            </>
           )}
         </Card>
 

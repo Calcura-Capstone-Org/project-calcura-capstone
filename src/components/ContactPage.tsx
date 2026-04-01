@@ -80,35 +80,6 @@ export function ContactPage() {
               </div>
             </Card>
 
-            <Card className="p-6">
-              <div className="flex items-start gap-4 mb-6">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Phone className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg text-gray-900 mb-1">Phone</h3>
-                  <p className="text-sm text-gray-600">+1 (555) 123-4567</p>
-                  <p className="text-xs text-gray-500 mt-1">Mon-Fri, 9AM-5PM EST</p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-start gap-4 mb-6">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-6 h-6 text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg text-gray-900 mb-1">Office</h3>
-                  <p className="text-sm text-gray-600">
-                    123 Finance Street<br />
-                    Suite 400<br />
-                    New York, NY 10001
-                  </p>
-                </div>
-              </div>
-            </Card>
-
             <Card className="p-6 bg-gradient-to-br from-green-50 to-blue-50">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">

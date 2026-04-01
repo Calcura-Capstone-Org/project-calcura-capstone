@@ -13,6 +13,7 @@ console.log("API_URL =", API_URL);
 interface DashboardPageProps {
   onCreateBudget?: () => void;
   onFinancialGoals?: () => void;
+  onManageBudgets?: () => void;
 }
 
 interface TemplateOption {
@@ -70,7 +71,7 @@ const toMonthlyAmount = (item: TemplateItemApi): number => {
   return item.period === "year" ? roundToCents(amount / 12) : roundToCents(amount);
 };
 
-export function DashboardPage({ onCreateBudget, onFinancialGoals }: DashboardPageProps) {
+export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudgets }: DashboardPageProps) {
   const [userName, setUserName] = useState("John");
   const [userTemplates, setUserTemplates] = useState<TemplateOption[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
@@ -279,6 +280,8 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals }: DashboardPag
 
   const totalExpenses = expenseRows.reduce((sum, item) => sum + item.amount, 0);
   const debtBalance = debtRows.reduce((sum, item) => sum + item.amount, 0);
+  const totalOtherCosts = totalExpenses + debtBalance + monthlyDonationsTotal + savingsAccountsTotal + investingAccountsTotal;
+  const finalBalance = incomeTotal - totalOtherCosts;
 
   const budgetSummary = {
     totalIncome: incomeTotal,
@@ -347,14 +350,15 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals }: DashboardPag
 
           <Card className="p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Savings Progress</span>
-              <PiggyBank className="w-5 h-5 text-green-600" />
+              <span className="text-sm text-gray-600">Final Balance</span>
+              <DollarSign className="w-5 h-5 text-indigo-600" />
             </div>
             <div className="text-2xl text-gray-900">
-              ${budgetSummary.currentSavings.toLocaleString()}
+              ${finalBalance.toLocaleString()}
             </div>
-            <div className="text-sm text-gray-600 mt-2">
-              {Math.round((budgetSummary.currentSavings / budgetSummary.savingsGoal) * 100)}% of goal
+            <div className={`flex items-center gap-1 mt-2 text-sm ${finalBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
+              {finalBalance >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+              <span>Income minus all tracked costs</span>
             </div>
           </Card>
         </div>
@@ -425,26 +429,6 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals }: DashboardPag
             <Button variant="outline" className="w-full mt-4" onClick={handleTemplateSync}>
               Update
             </Button>
-
-            <div className="mt-6">
-              <h3 className="text-sm text-gray-600 mb-2">Debt Balance by Item</h3>
-              {debtRows.length > 0 ? (
-                <div className="space-y-2">
-                  {debtRows.map((debt) => (
-                    <div key={debt.name} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-700">{debt.name}</span>
-                      <span className="text-gray-900">${debt.amount.toLocaleString()}</span>
-                    </div>
-                  ))}
-                  <div className="border-t pt-2 mt-2 flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Total debt balance</span>
-                    <span className="text-gray-900">${debtBalance.toLocaleString()}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-sm text-gray-500">No debt items found in this template.</div>
-              )}
-            </div>
           </Card>
         </div>
 
@@ -522,9 +506,9 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals }: DashboardPag
             <p className="text-sm text-gray-600">Set and track your goals</p>
           </Card>
 
-          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <h3 className="text-lg text-gray-900 mb-2">AI Recommendations</h3>
-            <p className="text-sm text-gray-600">Get personalized insights</p>
+          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => onManageBudgets?.()}>
+            <h3 className="text-lg text-gray-900 mb-2">Manage Your Budgets</h3>
+            <p className="text-sm text-gray-600">Update or delete your existing budgets</p>
           </Card>
         </div>
       </div>

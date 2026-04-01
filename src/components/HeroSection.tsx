@@ -1,6 +1,6 @@
 /* Joseph St.John wrote all 38 lines of code for this file. */
 import { Button } from "./ui/button";
-import logoImage from "figma:asset/1a36a3a0f13bed42158cef736e0c5fd1e80a9a0c.png";
+import logoImage from "../assets/logoImage.png";
 
 export function HeroSection() {
   return (
@@ -15,11 +15,8 @@ export function HeroSection() {
               Calcura is the smart simple way to track, manage, and grow money
             </p>
             <div>
-              <Button className="bg-green-600 hover:bg-green-700 mb-4">
-                Download the App
-              </Button>
               <p className="text-gray-500 text-sm">
-                Experience AI-powered budgeting, what-if scenario planning, and personalized financial insights tailored to your life stage.
+                Experience budgeting, what-if scenario planning, and personalized financial insights tailored to your life stage.
               </p>
             </div>
           </div>
