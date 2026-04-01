@@ -27,12 +27,3 @@ venv/
 .DS_Store
 desktop.ini
 Thumbs.db
-
-# AI context files (not for repo)
-project_bible.md
-soul.md
-intelligence.md
-actions_taken.md
-
-# This .gitignore itself
-.gitignore
