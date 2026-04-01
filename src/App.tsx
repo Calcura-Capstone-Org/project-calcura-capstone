@@ -73,6 +73,7 @@ export default function App() {
           onDashboardClick={() => setCurrentPage("dashboard")}
           onAboutClick={() => setCurrentPage("about")}
           onContactClick={() => setCurrentPage("contact")}
+          onTemplatesClick={() => setCurrentPage("template")}
           isLoggedIn={isLoggedIn}
         />
         <DashboardPage />
@@ -94,6 +95,7 @@ export default function App() {
           onDashboardClick={() => setCurrentPage("dashboard")}
           onAboutClick={() => setCurrentPage("about")}
           onContactClick={() => setCurrentPage("contact")}
+          onTemplatesClick={() => setCurrentPage("template")}
           isLoggedIn={isLoggedIn}
         />
         <AccountPage />
@@ -115,6 +117,7 @@ export default function App() {
           onDashboardClick={() => setCurrentPage("dashboard")}
           onAboutClick={() => setCurrentPage("about")}
           onContactClick={() => setCurrentPage("contact")}
+          onTemplatesClick={() => setCurrentPage("template")}
           isLoggedIn={isLoggedIn}
         />
         <AboutPage />
@@ -136,6 +139,7 @@ export default function App() {
           onDashboardClick={() => setCurrentPage("dashboard")}
           onAboutClick={() => setCurrentPage("about")}
           onContactClick={() => setCurrentPage("contact")}
+          onTemplatesClick={() => setCurrentPage("template")}
           isLoggedIn={isLoggedIn}
         />
         <ContactPage />
@@ -157,6 +161,7 @@ export default function App() {
           onDashboardClick={() => setCurrentPage("dashboard")}
           onAboutClick={() => setCurrentPage("about")}
           onContactClick={() => setCurrentPage("contact")}
+          onTemplatesClick={() => setCurrentPage("template")}
           isLoggedIn={isLoggedIn}
         />
         <TemplatePage />
@@ -177,6 +182,7 @@ export default function App() {
         onDashboardClick={() => setCurrentPage("dashboard")}
         onAboutClick={() => setCurrentPage("about")}
         onContactClick={() => setCurrentPage("contact")}
+        onTemplatesClick={() => setCurrentPage("template")}
         isLoggedIn={isLoggedIn}
       />
       <HeroSection />
