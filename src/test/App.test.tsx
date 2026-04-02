@@ -1,3 +1,4 @@
+/*Jonathan Torres wrote all 41 lines of code for this file*/
 import { render, screen, fireEvent } from '@testing-library/react';
 import App from '../App';
 

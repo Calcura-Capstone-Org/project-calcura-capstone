@@ -1,3 +1,4 @@
+/*Jonathan Torres wrote all 60 lines of code for this file*/
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SignUpPage } from '../components/SignUpPage';
 
