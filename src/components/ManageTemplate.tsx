@@ -52,9 +52,27 @@ interface Investment {
   amount: string;
 }
 
+interface TemplateOption {
+  id: number;
+  name: string;
+}
+
+interface TemplateItemApi {
+  item_id: number;
+  template_id: number;
+  category_id: number;
+  planned_amt: number;
+  item_name?: string;
+  period?: "month" | "year";
+}
+
 export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
   const [currentSection, setCurrentSection] = useState(1);
   const [activeUserEmail, setActiveUserEmail] = useState("");
+  const [userTemplates, setUserTemplates] = useState<TemplateOption[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
+  const [templateLoadError, setTemplateLoadError] = useState("");
   
   // Income section
   const [incomeType, setIncomeType] = useState<"takehome" | "">("");
@@ -87,6 +105,9 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
   const [templateName, setTemplateName] = useState("");
   const [templateSaved, setTemplateSaved] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [isDeletingTemplate, setIsDeletingTemplate] = useState(false);
+
+  const createId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   useEffect(() => {
     const userEmail = localStorage.getItem("email");
@@ -98,6 +119,32 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
       setCurrentUserId(Number(userId));
     }
   }, []);
+
+  useEffect(() => {
+    if (!currentUserId || !API_URL) {
+      return;
+    }
+
+    const loadUserTemplates = async () => {
+      try {
+        const response = await fetch(`${API_URL}/templates/`);
+        if (!response.ok) {
+          throw new Error(`Failed loading templates: ${response.status}`);
+        }
+
+        const templates = (await response.json()) as Array<{ template_id: number; user_id: number; name: string }>;
+        const ownedTemplates = templates
+          .filter((template) => Number(template.user_id) === Number(currentUserId))
+          .map((template) => ({ id: template.template_id, name: template.name }));
+        setUserTemplates(ownedTemplates);
+      } catch (error) {
+        console.error(error);
+        setTemplateLoadError("Unable to load your templates right now.");
+      }
+    };
+
+    void loadUserTemplates();
+  }, [currentUserId]);
 
   const commonExpenses = [
     "Housing/Rent",
@@ -123,9 +170,11 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
   ];
 
   const calculateTakeHome = () => {
-    if (!annualIncome || !filingStatus) return;
-    
-    const annual = parseFloat(annualIncome);
+    if (!takeHomePay || !filingStatus) return;
+
+    const monthly = parseFloat(takeHomePay);
+    if (!Number.isFinite(monthly) || monthly <= 0) return;
+    const annual = monthly * 12;
     // Simplified tax calculation (this is a rough estimate)
     let taxRate = 0.22; // Default federal rate
     
@@ -238,8 +287,168 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
     setInvestments(investments.filter(inv => inv.id !== id));
   };
 
+  const loadTemplateData = async (templateId: number) => {
+    if (!API_URL) {
+      setTemplateLoadError("API URL is not configured.");
+      return;
+    }
+
+    setIsLoadingTemplate(true);
+    setTemplateLoadError("");
+
+    try {
+      const response = await fetch(`${API_URL}/template_items/`);
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Failed loading template items: ${response.status} ${text}`);
+      }
+
+      const allItems = (await response.json()) as TemplateItemApi[];
+      const items = allItems.filter((item) => Number(item.template_id) === Number(templateId));
+
+      const loadedExpenses: Expense[] = [];
+      const loadedDebts: Debt[] = [];
+      const loadedDonations: Donation[] = [];
+      const loadedSavings: Savings[] = [];
+      const loadedInvestments: Investment[] = [];
+
+      const expenseCategoryNames: Record<number, string> = {
+        201: "Housing/Rent",
+        202: "Utilities",
+        203: "Groceries",
+        204: "Transportation",
+        205: "Insurance",
+        206: "Phone",
+        207: "Internet",
+        208: "Entertainment",
+        209: "Dining Out",
+        210: "Healthcare",
+        211: "Custom",
+      };
+
+      const debtCategoryNames: Record<number, string> = {
+        301: "Mortgage",
+        302: "Car Payment",
+        303: "Student Loan",
+        304: "Credit Card",
+        305: "Personal Loan",
+        306: "Other",
+      };
+
+      let loadedIncome = "";
+
+      for (const item of items) {
+        const categoryId = Number(item.category_id);
+        const amount = Number(item.planned_amt);
+        if (!Number.isFinite(amount) || amount < 0) {
+          continue;
+        }
+
+        if (categoryId === 101) {
+          loadedIncome = String(amount);
+          continue;
+        }
+
+        if (categoryId >= 201 && categoryId <= 211) {
+          const type = expenseCategoryNames[categoryId] ?? "Custom";
+          loadedExpenses.push({
+            id: createId(),
+            type,
+            customType: type === "Custom" ? (item.item_name ?? "") : "",
+            amount: String(amount),
+            period: item.period === "year" ? "year" : "month",
+          });
+          continue;
+        }
+
+        if (categoryId >= 301 && categoryId <= 306) {
+          loadedDebts.push({
+            id: createId(),
+            type: debtCategoryNames[categoryId] ?? "Other",
+            amount: String(amount),
+            period: item.period === "year" ? "year" : "month",
+          });
+          continue;
+        }
+
+        if (categoryId >= 400 && categoryId < 500) {
+          loadedDonations.push({
+            id: createId(),
+            organization: item.item_name ?? "",
+            amount: String(amount),
+            period: item.period === "year" ? "year" : "month",
+          });
+          continue;
+        }
+
+        if (categoryId >= 500 && categoryId < 600) {
+          loadedSavings.push({
+            id: createId(),
+            accountName: item.item_name ?? "",
+            amount: String(amount),
+          });
+          continue;
+        }
+
+        if (categoryId >= 600 && categoryId < 700) {
+          loadedInvestments.push({
+            id: createId(),
+            accountName: item.item_name ?? "",
+            amount: String(amount),
+          });
+        }
+      }
+
+      const selectedTemplate = userTemplates.find((template) => Number(template.id) === Number(templateId));
+      setTemplateName(selectedTemplate?.name ?? "");
+      setIncomeType(loadedIncome ? "takehome" : "");
+      setTakeHomePay(loadedIncome);
+      setExpenses(loadedExpenses);
+      setDebts(loadedDebts);
+      setDonations(loadedDonations);
+      setSavingsAccounts(loadedSavings);
+      setInvestments(loadedInvestments);
+      setCurrentSection(10);
+      setTemplateSaved(false);
+    } catch (error) {
+      console.error(error);
+      setTemplateLoadError("Unable to load that template.");
+    } finally {
+      setIsLoadingTemplate(false);
+    }
+  };
+
+  const deleteTemplateItemsForTemplate = async (templateId: number) => {
+    const existingItemsResponse = await fetch(`${API_URL}/template_items/`);
+    if (!existingItemsResponse.ok) {
+      const text = await existingItemsResponse.text();
+      throw new Error(`Failed loading existing template items: ${existingItemsResponse.status} ${text}`);
+    }
+
+    const existingItems = (await existingItemsResponse.json()) as TemplateItemApi[];
+    const existingForTemplate = existingItems.filter(
+      (item) => Number(item.template_id) === templateId
+    );
+
+    if (existingForTemplate.length === 0) {
+      return;
+    }
+
+    const deleteResponses = await Promise.all(
+      existingForTemplate.map((item) => fetch(`${API_URL}/template_items/${item.item_id}`, { method: "DELETE" }))
+    );
+
+    for (const deleteResponse of deleteResponses) {
+      if (!deleteResponse.ok) {
+        const text = await deleteResponse.text();
+        throw new Error(`Failed deleting old template item: ${deleteResponse.status} ${text}`);
+      }
+    }
+  };
+
   const saveTemplate = async () => {
-    if (!templateName.trim()) {
+    if (!selectedTemplateId) {
+      alert("Please select a template to update.");
       return;
     }
     if (!currentUserId) {
@@ -247,30 +456,14 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
       return;
     }
 
+    if (!API_URL) {
+      alert("API URL is not configured.");
+      return;
+    }
+
     try {
-      const response = await fetch(`${API_URL}/templates/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          user_id: currentUserId,
-          name: templateName.trim(),
-          stage_id: 1,
-          is_default: false
-        })
-      });
-
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`Failed saving template: ${response.status} ${text}`);
-      }
-
-      const data = await response.json();
-      const templateId = data?.template_id;
-      if (!templateId) {
-        throw new Error("Template created but template_id missing from response");
-      }
+      const templateId = Number(selectedTemplateId);
+      await deleteTemplateItemsForTemplate(templateId);
 
       const incomeAmt = parseFloat(takeHomePay);
       if (Number.isFinite(incomeAmt) && incomeAmt > 0) {
@@ -432,7 +625,7 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
 
       setTemplateSaved(true);
       // user confirmation before redirecting
-      alert("Template saved");
+      alert("Template updated");
       if (onTemplateSaved) {
         onTemplateSaved();
       }
@@ -442,16 +635,109 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
     }
   };
 
+  const handleDeleteBudget = async () => {
+    if (!selectedTemplateId) {
+      alert("Please select a template to delete.");
+      return;
+    }
+
+    if (!API_URL) {
+      alert("API URL is not configured.");
+      return;
+    }
+
+    const selectedTemplate = userTemplates.find((template) => String(template.id) === selectedTemplateId);
+    const templateLabel = selectedTemplate?.name ?? "this template";
+    const shouldDelete = window.confirm(`Delete ${templateLabel}? This will permanently remove the template and all of its budget items.`);
+    if (!shouldDelete) {
+      return;
+    }
+
+    try {
+      setIsDeletingTemplate(true);
+      const templateId = Number(selectedTemplateId);
+
+      await deleteTemplateItemsForTemplate(templateId);
+
+      const deleteTemplateResponse = await fetch(`${API_URL}/templates/${templateId}`, {
+        method: "DELETE",
+      });
+
+      if (!deleteTemplateResponse.ok) {
+        const text = await deleteTemplateResponse.text();
+        throw new Error(`Failed deleting template: ${deleteTemplateResponse.status} ${text}`);
+      }
+
+      setUserTemplates((current) => current.filter((template) => Number(template.id) !== templateId));
+      setSelectedTemplateId("");
+      setTemplateName("");
+      setIncomeType("");
+      setTakeHomePay("");
+      setExpenses([]);
+      setDebts([]);
+      setDonations([]);
+      setSavingsAccounts([]);
+      setInvestments([]);
+      setTemplateSaved(false);
+      setCurrentSection(1);
+
+      alert("Budget deleted.");
+    } catch (error) {
+      console.error(error);
+      alert("Unable to delete budget right now. Please try again.");
+    } finally {
+      setIsDeletingTemplate(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-6">
         <div className="mb-8">
-          <h1 className="text-gray-900 mb-2">Create Your Budget Template</h1>
+          <h1 className="text-gray-900 mb-2">Manage Your Budget Template</h1>
           {activeUserEmail && (
             <p className="text-sm text-gray-500 mb-1">Signed in as: {activeUserEmail}</p>
           )}
-          <p className="text-gray-600">Let's build a personalized budget based on your financial situation</p>
+          <p className="text-gray-600">Select one of your existing templates, edit it, then save changes.</p>
         </div>
+
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Select Existing Template</CardTitle>
+            <CardDescription>Choose a template you already created to load and edit.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <select
+              className="w-full border rounded px-3 py-2"
+              value={selectedTemplateId}
+              onChange={(e) => {
+                const nextTemplateId = e.target.value;
+                setSelectedTemplateId(nextTemplateId);
+                setTemplateSaved(false);
+                setTemplateLoadError("");
+                if (nextTemplateId) {
+                  void loadTemplateData(Number(nextTemplateId));
+                }
+              }}
+            >
+              <option value="">Select a template</option>
+              {userTemplates.map((template) => (
+                <option key={template.id} value={String(template.id)}>
+                  {template.name}
+                </option>
+              ))}
+            </select>
+
+            {isLoadingTemplate && <p className="text-sm text-gray-500">Loading template data...</p>}
+            {templateLoadError && <p className="text-sm text-red-600">{templateLoadError}</p>}
+            {!isLoadingTemplate && userTemplates.length === 0 && !templateLoadError && (
+              <p className="text-sm text-gray-500">No templates found for your account.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {selectedTemplateId && (
+          <>
 
         {/* Progress indicator */}
         <div className="mb-8">
@@ -996,27 +1282,29 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
         {currentSection >= 10 && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Name & Save Template</CardTitle>
-              <CardDescription>Give your template a name and save it</CardDescription>
+              <CardTitle>Save Template Changes</CardTitle>
+              <CardDescription>This replaces all existing template items for the selected template.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="templateName">Template Name</Label>
-                <Input
-                  id="templateName"
-                  placeholder="Enter a name for your template"
-                  value={templateName}
-                  onChange={(e) => setTemplateName(e.target.value)}
-                />
-              </div>
+              {templateName && <p className="text-sm text-gray-600">Editing template: {templateName}</p>}
 
-              <Button
-                className="bg-green-600 hover:bg-green-700 w-full"
-                onClick={saveTemplate}
-                disabled={!templateName.trim()}
-              >
-                Save Template
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  className="bg-green-600 hover:bg-green-700 flex-1"
+                  onClick={saveTemplate}
+                  disabled={!selectedTemplateId || isDeletingTemplate}
+                >
+                  Save Changes
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={handleDeleteBudget}
+                  disabled={!selectedTemplateId || isDeletingTemplate}
+                >
+                  {isDeletingTemplate ? "Deleting..." : "Delete Budget"}
+                </Button>
+              </div>
 
               {templateSaved && (
                 <Alert className="bg-green-50 border-green-200">
@@ -1025,6 +1313,8 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
               )}
             </CardContent>
           </Card>
+        )}
+          </>
         )}
       </div>
     </div>

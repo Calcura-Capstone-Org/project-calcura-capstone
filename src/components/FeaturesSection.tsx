@@ -22,7 +22,7 @@ const features = [
   {
     icon: Search,
     title: "Financial Insights",
-    description: "Get AI-powered insights and recommendations to optimize your financial health"
+    description: "Get insights and recommendations to optimize your financial health"
   }
 ];
 

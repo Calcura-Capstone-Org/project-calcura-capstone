@@ -6,6 +6,7 @@ import { BudgetTemplatesSection } from "./components/BudgetTemplatesSection";
 import { Footer } from "./components/Footer";
 import { FeedbackButton } from "./components/FeedbackButton";
 import { TemplatePage } from "./components/TemplatePage";
+import { TemplatePage as ManageTemplatePage } from "./components/ManageTemplate";
 import { LoginPage } from "./components/LoginPage";
 import { AccountPage } from "./components/AccountPage";
 import { DashboardPage } from "./components/DashboardPage";
@@ -13,8 +14,9 @@ import { AboutPage } from "./components/AboutPage";
 import { ContactPage } from "./components/ContactPage";
 import { SignUpPage } from "./components/SignUpPage";
 import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
+import { FinancialGoals } from "./components/FinancialGoals";
 
-type PageView = "landing" | "template" | "login" | "account" | "dashboard" | "about" | "contact" | "signup" | "forgotPassword";
+type PageView = "landing" | "template" | "manageTemplate" | "login" | "account" | "dashboard" | "financialgoals" | "about" | "contact" | "signup" | "forgotPassword";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<PageView>("landing");
@@ -68,14 +70,20 @@ export default function App() {
       <div className="min-h-screen bg-white">
         <Header 
           onLoginClick={() => setCurrentPage("login")}
+          onSignUpClick={() => setCurrentPage("signup")}
           onHomeClick={() => setCurrentPage("landing")}
+          onTemplatesClick={() => setCurrentPage("manageTemplate")}
           onAccountClick={() => setCurrentPage("account")}
           onDashboardClick={() => setCurrentPage("dashboard")}
           onAboutClick={() => setCurrentPage("about")}
           onContactClick={() => setCurrentPage("contact")}
           isLoggedIn={isLoggedIn}
         />
-        <DashboardPage onCreateBudget={() => setCurrentPage("template")} />
+        <DashboardPage
+        onCreateBudget={() => setCurrentPage("template")}
+        onFinancialGoals={() => setCurrentPage("financialgoals")}
+        onManageBudgets={() => setCurrentPage("manageTemplate")}
+      />
         <Footer 
           onAboutClick={() => setCurrentPage("about")}
           onContactClick={() => setCurrentPage("contact")}
@@ -89,7 +97,9 @@ export default function App() {
       <div className="min-h-screen bg-white">
         <Header 
           onLoginClick={() => setCurrentPage("login")}
+          onSignUpClick={() => setCurrentPage("signup")}
           onHomeClick={() => setCurrentPage("landing")}
+          onTemplatesClick={() => setCurrentPage("manageTemplate")}
           onAccountClick={() => setCurrentPage("account")}
           onDashboardClick={() => setCurrentPage("dashboard")}
           onAboutClick={() => setCurrentPage("about")}
@@ -105,12 +115,37 @@ export default function App() {
     );
   }
 
+  if (currentPage === "financialgoals") {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header 
+          onLoginClick={() => setCurrentPage("login")}
+          onSignUpClick={() => setCurrentPage("signup")}
+          onHomeClick={() => setCurrentPage("landing")}
+          onTemplatesClick={() => setCurrentPage("manageTemplate")}
+          onAccountClick={() => setCurrentPage("account")}
+          onDashboardClick={() => setCurrentPage("dashboard")}
+          onAboutClick={() => setCurrentPage("about")}
+          onContactClick={() => setCurrentPage("contact")}
+          isLoggedIn={isLoggedIn}
+        />
+        <FinancialGoals onCreateBudget={() => setCurrentPage("template")} />
+        <Footer 
+          onAboutClick={() => setCurrentPage("about")}
+          onContactClick={() => setCurrentPage("contact")}
+        />
+      </div>
+    );
+  }
+
   if (currentPage === "about") {
     return (
       <div className="min-h-screen bg-white">
         <Header 
           onLoginClick={() => setCurrentPage("login")}
+          onSignUpClick={() => setCurrentPage("signup")}
           onHomeClick={() => setCurrentPage("landing")}
+          onTemplatesClick={() => setCurrentPage("manageTemplate")}
           onAccountClick={() => setCurrentPage("account")}
           onDashboardClick={() => setCurrentPage("dashboard")}
           onAboutClick={() => setCurrentPage("about")}
@@ -131,7 +166,9 @@ export default function App() {
       <div className="min-h-screen bg-white">
         <Header 
           onLoginClick={() => setCurrentPage("login")}
+          onSignUpClick={() => setCurrentPage("signup")}
           onHomeClick={() => setCurrentPage("landing")}
+          onTemplatesClick={() => setCurrentPage("manageTemplate")}
           onAccountClick={() => setCurrentPage("account")}
           onDashboardClick={() => setCurrentPage("dashboard")}
           onAboutClick={() => setCurrentPage("about")}
@@ -152,14 +189,39 @@ export default function App() {
       <div className="min-h-screen bg-white">
         <Header 
           onLoginClick={() => setCurrentPage("login")}
+          onSignUpClick={() => setCurrentPage("signup")}
           onHomeClick={() => setCurrentPage("landing")}
+          onTemplatesClick={() => setCurrentPage("manageTemplate")}
           onAccountClick={() => setCurrentPage("account")}
           onDashboardClick={() => setCurrentPage("dashboard")}
           onAboutClick={() => setCurrentPage("about")}
           onContactClick={() => setCurrentPage("contact")}
           isLoggedIn={isLoggedIn}
         />
-        <TemplatePage />
+        <TemplatePage onTemplateSaved={() => setCurrentPage("dashboard")} />
+        <Footer 
+          onAboutClick={() => setCurrentPage("about")}
+          onContactClick={() => setCurrentPage("contact")}
+        />
+      </div>
+    );
+  }
+
+  if (currentPage === "manageTemplate") {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header 
+          onLoginClick={() => setCurrentPage("login")}
+          onSignUpClick={() => setCurrentPage("signup")}
+          onHomeClick={() => setCurrentPage("landing")}
+          onTemplatesClick={() => setCurrentPage("manageTemplate")}
+          onAccountClick={() => setCurrentPage("account")}
+          onDashboardClick={() => setCurrentPage("dashboard")}
+          onAboutClick={() => setCurrentPage("about")}
+          onContactClick={() => setCurrentPage("contact")}
+          isLoggedIn={isLoggedIn}
+        />
+        <ManageTemplatePage onTemplateSaved={() => setCurrentPage("dashboard")} />
         <Footer 
           onAboutClick={() => setCurrentPage("about")}
           onContactClick={() => setCurrentPage("contact")}
@@ -172,7 +234,10 @@ export default function App() {
     <div className="min-h-screen bg-white">
       <Header 
         onLoginClick={() => setCurrentPage("login")}
+        onSignUpClick={() => setCurrentPage("signup")}
         onHomeClick={() => setCurrentPage("landing")}
+          onTemplatesClick={() => setCurrentPage("manageTemplate")}
+        onTemplatesClick={() => setCurrentPage("manageTemplate")}
         onAccountClick={() => setCurrentPage("account")}
         onDashboardClick={() => setCurrentPage("dashboard")}
         onAboutClick={() => setCurrentPage("about")}
