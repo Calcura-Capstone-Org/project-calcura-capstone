@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import logoImage from "../assets/logoImage.png";
 
-const logoImage = "";
+const API_URL = import.meta.env.VITE_API_URL;
 
 interface SignUpPageProps {
   onClose?: () => void;
@@ -19,12 +20,19 @@ export function SignUpPage({
   onHomeClick,
   onLoginSuccess,
 }: SignUpPageProps) {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [age, setAge] = useState(18);
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!name.trim()) {
+      alert("Please enter your name.");
+      return;
+    }
 
     if (!email.trim()) {
       alert("Please enter your email.");
@@ -41,8 +49,39 @@ export function SignUpPage({
       return;
     }
 
-    alert("Account created successfully! Please log in.");
-    onCreateAccount?.();
+    if (!Number.isInteger(age) || age < 13) {
+      alert("Please enter a valid age (13 or older).");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/users/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          age,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        console.error("Signup failed:", errorData);
+        alert("Could not create account. Please try again.");
+        return;
+      }
+
+      console.log("Signup successful");
+      alert("Account created successfully. You can now log in.");
+      onCreateAccount?.();
+    } catch (error) {
+      console.error("Network error during signup:", error);
+      alert("Unable to reach the server. Please try again later.");
+    }
   };
 
   return (
@@ -87,10 +126,29 @@ export function SignUpPage({
 
           <form onSubmit={handleSignup} className="space-y-6">
             <Input
+              type="text"
+              placeholder="Full Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-6 border-2 border-gray-900 rounded-xl"
+              required
+            />
+
+            <Input
               type="email"
               placeholder="Email Address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-6 border-2 border-gray-900 rounded-xl"
+              required
+            />
+
+            <Input
+              type="number"
+              placeholder="Age"
+              value={age}
+              min={13}
+              onChange={(e) => setAge(Number(e.target.value))}
               className="w-full px-4 py-6 border-2 border-gray-900 rounded-xl"
               required
             />

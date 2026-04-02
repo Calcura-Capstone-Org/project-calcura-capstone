@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import logoImage from "figma:asset/1a36a3a0f13bed42158cef736e0c5fd1e80a9a0c.png";
+import logoImage from "../assets/logoImage.png";
 
 /* API URL */
 const API_URL = import.meta.env.VITE_API_URL;

@@ -1,5 +1,5 @@
 /* Joseph Spreckels wrote all 153 lines of code for this file */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -15,8 +15,113 @@ console.log("API_URL =", API_URL);
 
 export function AccountPage() {
   const [name, setName] = useState("John Doe");
-  const [email, setEmail] = useState("john.doe@example.com");
-  const [phone, setPhone] = useState("+1 (555) 123-4567");
+  const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    const userEmail = localStorage.getItem("email");
+    const userId = localStorage.getItem("user_id");
+
+    if (userEmail) {
+      setEmail(userEmail);
+    }
+
+    if (userId) {
+      fetch(`${API_URL}/users`) // fallback if we want DB truth for active user
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error("Unable to query users");
+          }
+          return res.json();
+        })
+        .then((users) => {
+          const activeUser = users.find((u: any) => String(u.user_id) === String(userId));
+          if (activeUser) {
+            setEmail(activeUser.email);
+            if (activeUser.name) {
+              setName(activeUser.name);
+            }
+          }
+        })
+        .catch((err) => {
+          console.warn("AccountPage: Could not load active user from API:", err);
+        });
+    }
+  }, []);
+
+  const handleDeleteAccount = async () => {
+    const userId = localStorage.getItem("user_id");
+    if (!userId) {
+      alert("No active user found. Cannot delete account.");
+      return;
+    }
+
+    if (!window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/users/${userId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        console.error("Delete account failed", errorData);
+        alert("Failed to delete account. Please try again.");
+        return;
+      }
+
+      alert("Account deleted successfully.");
+      localStorage.removeItem("user_id");
+      localStorage.removeItem("email");
+      window.location.href = "/";
+    } catch (err) {
+      console.error("Delete account network error", err);
+      alert("Unable to delete account at this time. Please try again later.");
+    }
+  };
+
+  const handleSignOut = () => {
+    localStorage.removeItem("user_id");
+    localStorage.removeItem("email");
+    alert("Signed out successfully.");
+    window.location.href = "/";
+  };
+
+  const handleSaveChanges = async () => {
+    const userId = localStorage.getItem("user_id");
+    if (!userId) {
+      alert("No active user found. Please log in again.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/users/${userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        console.error("Failed to update user", errorData);
+        alert(`Unable to save changes: ${errorData?.detail || response.statusText}`);
+        return;
+      }
+
+      const result = await response.json();
+      setEmail(email);
+      setName(name);
+      localStorage.setItem("email", email);
+      alert("Profile updated successfully.");
+      console.log("User updated", result);
+    } catch (error) {
+      console.error("Network error updating user", error);
+      alert("Network error while saving changes. Please try again.");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -98,19 +203,8 @@ export function AccountPage() {
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-
                 <div className="flex gap-3 pt-4">
-                  <Button className="bg-green-600 hover:bg-green-700">
+                  <Button className="bg-green-600 hover:bg-green-700" onClick={handleSaveChanges}>
                     Save Changes
                   </Button>
                   <Button variant="outline">
@@ -147,9 +241,14 @@ export function AccountPage() {
                 Permanently delete your account and all data
               </p>
               
-              <Button variant="destructive">
-                Delete Account
-              </Button>
+              <div className="flex gap-3">
+                <Button variant="destructive" onClick={handleDeleteAccount}>
+                  Delete Account
+                </Button>
+                <Button variant="outline" onClick={handleSignOut}>
+                  Sign Out
+                </Button>
+              </div>
             </Card>
           </div>
         </div>

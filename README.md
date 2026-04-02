@@ -15,5 +15,5 @@ If this command does not work, use `python -m uvicorn testapp:app --reload` inst
 
 If nothing wors try `cd project-calcura-capstone` and then run the command again
 
-`http://127.0.0.1:8000/docs#/` to access the API documentation and test the endpoints. 
-  
+`http://127.0.0.1:8000/docs#/` to access the API documentation and test the endpoints.
+
