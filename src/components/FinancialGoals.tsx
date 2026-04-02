@@ -412,7 +412,7 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
             </div>
           </div>
 
-          <div className="rounded-lg border bg-white p-5 mb-6">
+          <div className="rounded-lg border bg-white p-5 mb-6 px-6 py-4 text-gray-900">
             <p className="text-xs text-gray-500">Total Income</p>
             <p className="text-3xl text-gray-900 mt-1">${incomeTotal.toLocaleString()}</p>
           </div>
@@ -420,6 +420,22 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
           {syncError && (
             <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {syncError}
+            </div>
+          )}
+
+          {incomeTotal > 0 ? (
+            <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
+              {hasHousingData ? (
+                housingExpense <= housingTarget
+                  ? `Your current housing/rent spending is already within the recommended limit, so the recommended amount stays at $${recommendedHousing.toLocaleString()}.`
+                  : `To stay near 25% of income, reduce housing/rent from $${housingExpense.toLocaleString()} to about $${recommendedHousing.toLocaleString()}.`
+              ) : (
+                `No Housing/Rent expense was found in this template. Based on total income, the recommended housing/rent amount is $${recommendedHousing.toLocaleString()}.`
+              )}
+            </div>
+          ) : (
+            <div className="rounded border bg-gray-50 px-3 py-2 text-sm text-gray-600">
+              No income data found for this template. Add income to receive a housing recommendation.
             </div>
           )}
 
@@ -440,21 +456,12 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
             </div>
           </div>
 
-          {incomeTotal > 0 ? (
-            <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
-              {hasHousingData ? (
-                housingExpense <= housingTarget
-                  ? `Your current housing/rent spending is already within the recommended limit, so the recommended amount stays at $${recommendedHousing.toLocaleString()}.`
-                  : `To stay near 25% of income, reduce housing/rent from $${housingExpense.toLocaleString()} to about $${recommendedHousing.toLocaleString()}.`
-              ) : (
-                `No Housing/Rent expense was found in this template. Based on total income, the recommended housing/rent amount is $${recommendedHousing.toLocaleString()}.`
-              )}
-            </div>
-          ) : (
-            <div className="rounded border bg-gray-50 px-3 py-2 text-sm text-gray-600">
-              No income data found for this template. Add income to receive a housing recommendation.
-            </div>
-          )}
+              <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
+                {requiredExpensesMeetsTarget
+                  ? `Your required expenses are already within the 25% recommended limit at $${requiredExpensesTotal.toLocaleString()}.`
+                  : `To meet the 25% guideline, reduce required expenses from $${requiredExpensesTotal.toLocaleString()} to about $${recommendedRequiredExpenses.toLocaleString()}.`}
+              </div>
+
 
           {incomeTotal > 0 && (
             <>
@@ -480,10 +487,11 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
               </div>
 
               <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
-                {requiredExpensesMeetsTarget
-                  ? `Your required expenses are already within the 25% recommended limit at $${requiredExpensesTotal.toLocaleString()}.`
-                  : `To meet the 25% guideline, reduce required expenses from $${requiredExpensesTotal.toLocaleString()} to about $${recommendedRequiredExpenses.toLocaleString()}.`}
+                {givingMeetsTarget
+                  ? `Your current giving already meets or exceeds the 10% recommendation, so the recommended amount stays at $${recommendedGiving.toLocaleString()}.`
+                  : `A recommended giving amount is $${recommendedGiving.toLocaleString()}, which is 10% of total income.`}
               </div>
+
 
               <div className="grid md:grid-cols-4 gap-4 mt-6 mb-6">
                 <div className="rounded-lg border bg-white p-4">
@@ -507,10 +515,11 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
               </div>
 
               <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
-                {givingMeetsTarget
-                  ? `Your current giving already meets or exceeds the 10% recommendation, so the recommended amount stays at $${recommendedGiving.toLocaleString()}.`
-                  : `A recommended giving amount is $${recommendedGiving.toLocaleString()}, which is 10% of total income.`}
+                {savingsMeetsTarget
+                  ? `Your current savings already meet or exceed the 10% recommendation, so the recommended amount stays at $${recommendedSavings.toLocaleString()}.`
+                  : `A recommended savings amount is $${recommendedSavings.toLocaleString()}, which is 10% of total income.`}
               </div>
+
 
               <div className="grid md:grid-cols-4 gap-4 mt-6 mb-6">
                 <div className="rounded-lg border bg-white p-4">
@@ -534,9 +543,9 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
               </div>
 
               <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
-                {savingsMeetsTarget
-                  ? `Your current savings already meet or exceed the 10% recommendation, so the recommended amount stays at $${recommendedSavings.toLocaleString()}.`
-                  : `A recommended savings amount is $${recommendedSavings.toLocaleString()}, which is 10% of total income.`}
+                {investingMeetsTarget
+                  ? `Your current investing already meets or exceeds the 10% recommendation, so the recommended amount stays at $${recommendedInvesting.toLocaleString()}.`
+                  : `A recommended investing amount is $${recommendedInvesting.toLocaleString()}, which is 10% of total income.`}
               </div>
 
               <div className="grid md:grid-cols-4 gap-4 mt-6 mb-6">
@@ -560,13 +569,9 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
                 </div>
               </div>
 
-              <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
-                {investingMeetsTarget
-                  ? `Your current investing already meets or exceeds the 10% recommendation, so the recommended amount stays at $${recommendedInvesting.toLocaleString()}.`
-                  : `A recommended investing amount is $${recommendedInvesting.toLocaleString()}, which is 10% of total income.`}
-              </div>
 
-              <div className="rounded-lg border bg-white px-5 py-4 mt-6 text-gray-900">
+
+              <div className="rounded-lg border bg-white px-6 py-4 mt-6 text-gray-900">
                 <p className="text-xs text-gray-500">Remaining Funds Based on Recommendations</p>
                 <p className={`text-3xl mt-1 ${remainingRecommendedFunds < 0 ? "text-red-600" : "text-gray-900"}`}>
                   ${remainingRecommendedFunds.toLocaleString()}
