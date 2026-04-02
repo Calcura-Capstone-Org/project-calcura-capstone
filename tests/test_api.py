@@ -1,3 +1,4 @@
+#Jonathan Torres wrote 235 lines of code for this file
 """
 Tests for the Calcura FastAPI backend.
 Uses TestClient to test API endpoints against an in-memory SQLite database.
@@ -23,6 +24,7 @@ def mock_db():
     conn.execute("""
         CREATE TABLE IF NOT EXISTS Users (
             user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name VARCHAR(255),
             email TEXT NOT NULL,
             password_hash TEXT NOT NULL,
             mfa_secret TEXT,
@@ -119,6 +121,7 @@ class TestUsers:
 
     def test_create_user(self, client):
         response = client.post("/users/", json={
+            "name": "Test User",
             "email": "test@example.com",
             "password": "secret123",
             "age": 25
@@ -128,6 +131,7 @@ class TestUsers:
 
     def test_list_users_after_create(self, client):
         client.post("/users/", json={
+            "name": "Test User",
             "email": "test@example.com",
             "password": "secret123",
             "age": 25
@@ -140,6 +144,7 @@ class TestUsers:
 
     def test_login_success(self, client):
         client.post("/users/", json={
+            "name": "Login User",
             "email": "login@example.com",
             "password": "mypassword",
             "age": 30
@@ -155,6 +160,7 @@ class TestUsers:
 
     def test_login_wrong_password(self, client):
         client.post("/users/", json={
+            "name": "Login User",
             "email": "login@example.com",
             "password": "mypassword",
             "age": 30
@@ -178,6 +184,7 @@ class TestUsers:
 class TestBudgets:
     def _create_user(self, client):
         client.post("/users/", json={
+            "name": "Budget User",
             "email": "budget@example.com",
             "password": "pass",
             "age": 25

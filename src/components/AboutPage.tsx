@@ -1,7 +1,7 @@
 /* Jaren Schneider wrote all 168 lines of code for this file*/
 import { Card } from "./ui/card";
 import { Target, Users, Heart, TrendingUp, Shield, Lightbulb } from "lucide-react";
-import logoImage from "figma:asset/1a36a3a0f13bed42158cef736e0c5fd1e80a9a0c.png";
+import logoImage from "../assets/logoImage.png";
 
 /* API URL */
 const API_URL = import.meta.env.VITE_API_URL;

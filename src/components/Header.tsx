@@ -1,7 +1,7 @@
 /*Jonathan Torres wrote 87 lines of code for this file*/
 import { Button } from "./ui/button";
 import { User } from "lucide-react";
-import logoImage from "figma:asset/1a36a3a0f13bed42158cef736e0c5fd1e80a9a0c.png";
+import logoImage from "../assets/logoImage.png";
 
 /* API URL */
 const API_URL = import.meta.env.VITE_API_URL;
@@ -11,16 +11,18 @@ console.log("API_URL =", API_URL);
 
 interface HeaderProps {
   onLoginClick?: () => void;
+  onSignUpClick?: () => void;
   onHomeClick?: () => void;
   onAccountClick?: () => void;
   onDashboardClick?: () => void;
   onAboutClick?: () => void;
   onContactClick?: () => void;
   onTemplatesClick?: () => void;
+  onFeaturesClick?: () => void;
   isLoggedIn?: boolean;
 }
 
-export function Header({ onLoginClick, onHomeClick, onAccountClick, onDashboardClick, onTemplatesClick, onAboutClick, onContactClick, isLoggedIn = false }: HeaderProps) {
+export function Header({ onLoginClick, onSignUpClick, onHomeClick, onAccountClick, onDashboardClick, onTemplatesClick, onAboutClick, onContactClick, onFeaturesClick, isLoggedIn = false }: HeaderProps) {
   return (
     <header className="bg-white border-b">
       <div className="max-w-7xl mx-auto px-6 py-4">
@@ -46,9 +48,12 @@ export function Header({ onLoginClick, onHomeClick, onAccountClick, onDashboardC
                 Dashboard
               </button>
             )}
-            <a href="#features" className="text-gray-700 hover:text-gray-900">
+            <button
+                onClick={onFeaturesClick}
+                className="text-gray-700 hover:text-gray-900"
+              >
               Features
-            </a>
+            </button>
 
             <button 
               onClick={onTemplatesClick}
@@ -86,7 +91,7 @@ export function Header({ onLoginClick, onHomeClick, onAccountClick, onDashboardC
                 <Button variant="outline" onClick={onLoginClick}>
                   Login
                 </Button>
-                <Button className="bg-green-600 hover:bg-green-700" onClick={onLoginClick}>
+                <Button className="bg-green-600 hover:bg-green-700" onClick={onSignUpClick}>
                   Sign Up Free
                 </Button>
               </>

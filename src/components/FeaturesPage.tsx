@@ -11,8 +11,8 @@ console.log("API_URL =", API_URL);
 const features = [
   {
     icon: BarChart3,
-    title: "Smart Budgeting",
-    description: "Automatically categorize expenses and create intelligent budgets based on your spending patterns"
+    title: "Recommended Budget",
+    description: "Get a recommended budget using your own information and tested financial principles"
   },
   {
     icon: Calendar,
@@ -26,7 +26,11 @@ const features = [
   }
 ];
 
-export function FeaturesSection() {
+interface FeaturesSectionProps {
+  onRecommendBudgetClick?: () => void;
+}
+
+export function FeaturesSection({ onRecommendBudgetClick }: FeaturesSectionProps) {
   return (
     <section id="features" className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-6">
@@ -35,8 +39,13 @@ export function FeaturesSection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {features.map((feature) => {
             const Icon = feature.icon;
+            const isRecommended = feature.title === "Recommended Budget";
             return (
-              <Card key={feature.title} className="p-8 text-center hover:shadow-lg transition-shadow">
+              <Card
+                key={feature.title}
+                className={`p-8 text-center hover:shadow-lg transition-shadow${isRecommended ? " cursor-pointer" : ""}`}
+                onClick={isRecommended ? onRecommendBudgetClick : undefined}
+              >
                 <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-600 rounded-2xl mb-6">
                   <Icon className="w-10 h-10 text-white" />
                 </div>
