@@ -25,6 +25,13 @@ export default function App() {
     setCurrentPage("dashboard");
   };
 
+  const handleFeaturesClick = () => {
+    setCurrentPage("landing");
+    setTimeout(() => {
+      document.getElementById("features")?.scrollIntoView({ behavior: "smooth" });
+    }, 0);
+  };
+
   if (currentPage === "login") {
     return (
       <LoginPage 
@@ -74,6 +81,7 @@ export default function App() {
           onAboutClick={() => setCurrentPage("about")}
           onContactClick={() => setCurrentPage("contact")}
           onTemplatesClick={() => setCurrentPage("template")}
+          onFeaturesClick={handleFeaturesClick}
           isLoggedIn={isLoggedIn}
         />
         <DashboardPage />
@@ -96,6 +104,7 @@ export default function App() {
           onAboutClick={() => setCurrentPage("about")}
           onContactClick={() => setCurrentPage("contact")}
           onTemplatesClick={() => setCurrentPage("template")}
+          onFeaturesClick={handleFeaturesClick}
           isLoggedIn={isLoggedIn}
         />
         <AccountPage />
@@ -118,6 +127,7 @@ export default function App() {
           onAboutClick={() => setCurrentPage("about")}
           onContactClick={() => setCurrentPage("contact")}
           onTemplatesClick={() => setCurrentPage("template")}
+          onFeaturesClick={handleFeaturesClick}
           isLoggedIn={isLoggedIn}
         />
         <AboutPage />
@@ -140,6 +150,7 @@ export default function App() {
           onAboutClick={() => setCurrentPage("about")}
           onContactClick={() => setCurrentPage("contact")}
           onTemplatesClick={() => setCurrentPage("template")}
+          onFeaturesClick={handleFeaturesClick}
           isLoggedIn={isLoggedIn}
         />
         <ContactPage />
@@ -162,6 +173,7 @@ export default function App() {
           onAboutClick={() => setCurrentPage("about")}
           onContactClick={() => setCurrentPage("contact")}
           onTemplatesClick={() => setCurrentPage("template")}
+          onFeaturesClick={handleFeaturesClick}
           isLoggedIn={isLoggedIn}
         />
         <TemplatePage />
@@ -183,6 +195,7 @@ export default function App() {
         onAboutClick={() => setCurrentPage("about")}
         onContactClick={() => setCurrentPage("contact")}
         onTemplatesClick={() => setCurrentPage("template")}
+        onFeaturesClick={handleFeaturesClick}
         isLoggedIn={isLoggedIn}
       />
       <HeroSection />

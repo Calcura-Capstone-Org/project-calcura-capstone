@@ -17,10 +17,11 @@ interface HeaderProps {
   onAboutClick?: () => void;
   onContactClick?: () => void;
   onTemplatesClick?: () => void;
+  onFeaturesClick?: () => void;
   isLoggedIn?: boolean;
 }
 
-export function Header({ onLoginClick, onHomeClick, onAccountClick, onDashboardClick, onTemplatesClick, onAboutClick, onContactClick, isLoggedIn = false }: HeaderProps) {
+export function Header({ onLoginClick, onHomeClick, onAccountClick, onDashboardClick, onTemplatesClick, onAboutClick, onContactClick, onFeaturesClick, isLoggedIn = false }: HeaderProps) {
   return (
     <header className="bg-white border-b">
       <div className="max-w-7xl mx-auto px-6 py-4">
@@ -46,9 +47,12 @@ export function Header({ onLoginClick, onHomeClick, onAccountClick, onDashboardC
                 Dashboard
               </button>
             )}
-            <a href="#features" className="text-gray-700 hover:text-gray-900">
+            <button
+              onClick={onFeaturesClick}
+              className="text-gray-700 hover:text-gray-900"
+            >
               Features
-            </a>
+            </button>
 
             <button 
               onClick={onTemplatesClick}
