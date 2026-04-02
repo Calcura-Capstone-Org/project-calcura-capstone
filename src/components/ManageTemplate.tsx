@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "./ui/alert";
 
 interface TemplatePageProps {
   onTemplateSaved?: () => void;
+  onCreateTemplate?: () => void;
 }
 
 /* API URL */
@@ -66,7 +67,7 @@ interface TemplateItemApi {
   period?: "month" | "year";
 }
 
-export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
+export function TemplatePage({ onTemplateSaved, onCreateTemplate }: TemplatePageProps) {
   const [currentSection, setCurrentSection] = useState(1);
   const [activeUserEmail, setActiveUserEmail] = useState("");
   const [userTemplates, setUserTemplates] = useState<TemplateOption[]>([]);
@@ -732,6 +733,19 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
             {templateLoadError && <p className="text-sm text-red-600">{templateLoadError}</p>}
             {!isLoadingTemplate && userTemplates.length === 0 && !templateLoadError && (
               <p className="text-sm text-gray-500">No templates found for your account.</p>
+            )}
+
+            {onCreateTemplate && (
+              <div className="pt-2">
+                <h4 className="leading-none mb-2">or</h4>
+                <Button
+                  variant="outline"
+                  onClick={onCreateTemplate}
+                  className="w-full"
+                >
+                  <Plus className="mr-2 w-4 h-4" /> Create New Template
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>

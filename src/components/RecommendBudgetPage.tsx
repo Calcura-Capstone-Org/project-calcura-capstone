@@ -7,7 +7,7 @@ import { TrendingUp, TrendingDown, DollarSign, CreditCard, PiggyBank, Target } f
 /* API URL */
 const API_URL = import.meta.env.VITE_API_URL;
 
-interface FinancialGoalsProps {
+interface RecommendBudgetPageProps {
   onCreateBudget?: () => void;
 }
 
@@ -66,17 +66,25 @@ const toMonthlyAmount = (item: TemplateItemApi): number => {
   return item.period === "year" ? roundToCents(amount / 12) : roundToCents(amount);
 };
 
-export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
+export function RecommendBudgetPage({ onCreateBudget }: RecommendBudgetPageProps) {
   const [userName, setUserName] = useState("John");
   const [userTemplates, setUserTemplates] = useState<TemplateOption[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [incomeTotal, setIncomeTotal] = useState(0);
   const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>([]);
   const [debtRows, setDebtRows] = useState<DebtRow[]>([]);
+  const [givingRows, setGivingRows] = useState<ExpenseRow[]>([]);
+  const [savingsRows, setSavingsRows] = useState<ExpenseRow[]>([]);
+  const [investingRows, setInvestingRows] = useState<ExpenseRow[]>([]);
   const [givingTotal, setGivingTotal] = useState(0);
   const [savingsTotal, setSavingsTotal] = useState(0);
   const [investingTotal, setInvestingTotal] = useState(0);
   const [syncError, setSyncError] = useState("");
+  const [showExpenseBreakdown, setShowExpenseBreakdown] = useState(false);
+  const [showPersonalBreakdown, setShowPersonalBreakdown] = useState(false);
+  const [showGivingBreakdown, setShowGivingBreakdown] = useState(false);
+  const [showSavingsBreakdown, setShowSavingsBreakdown] = useState(false);
+  const [showInvestingBreakdown, setShowInvestingBreakdown] = useState(false);
 
   const fetchJson = async <T,>(endpoint: string): Promise<T | null> => {
     if (!API_URL) {
@@ -93,7 +101,7 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
       }
       return (await response.json()) as T;
     } catch (err) {
-      console.warn(`FinancialGoals: Failed to load ${endpoint}`, err);
+      console.warn(`RecommendBudgetPage: Failed to load ${endpoint}`, err);
       return null;
     }
   };
@@ -105,7 +113,7 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
       try {
         userId = localStorage.getItem("user_id");
       } catch (err) {
-        console.warn("FinancialGoals: Unable to read local user_id", err);
+        console.warn("RecommendBudgetPage: Unable to read local user_id", err);
         return;
       }
 
@@ -132,7 +140,7 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
           try {
             await syncTemplateData(String(ownTemplates[0].id));
           } catch (err) {
-            console.warn("FinancialGoals: Unable to auto-load template data", err);
+            console.warn("RecommendBudgetPage: Unable to auto-load template data", err);
           }
         }
       }
@@ -150,7 +158,7 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
       try {
         await syncTemplateData(selectedTemplate);
       } catch (err) {
-        console.warn("FinancialGoals: Unable to sync selected template", err);
+        console.warn("RecommendBudgetPage: Unable to sync selected template", err);
       }
     };
 
@@ -191,6 +199,9 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
 
     const expenseByName = new Map<string, number>();
     const debtByName = new Map<string, number>();
+    const givingByName = new Map<string, number>();
+    const savingsByName = new Map<string, number>();
+    const investingByName = new Map<string, number>();
     let givingSum = 0;
     let savingsSum = 0;
     let investingSum = 0;
@@ -222,18 +233,21 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
       const isGiving = itemCategoryId >= 400 && itemCategoryId < 500;
       if (isGiving) {
         givingSum = roundToCents(givingSum + plannedAmount);
+        givingByName.set(rowName, roundToCents((givingByName.get(rowName) ?? 0) + plannedAmount));
         continue;
       }
 
       const isSavings = type ? type === "savings" : itemCategoryId >= 500 && itemCategoryId < 600;
       if (isSavings) {
         savingsSum = roundToCents(savingsSum + plannedAmount);
+        savingsByName.set(rowName, roundToCents((savingsByName.get(rowName) ?? 0) + plannedAmount));
         continue;
       }
 
       const isInvesting = type ? type === "investments" : itemCategoryId >= 600 && itemCategoryId < 700;
       if (isInvesting) {
         investingSum = roundToCents(investingSum + plannedAmount);
+        investingByName.set(rowName, roundToCents((investingByName.get(rowName) ?? 0) + plannedAmount));
       }
     }
 
@@ -257,6 +271,19 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
     setGivingTotal(givingSum);
     setSavingsTotal(savingsSum);
     setInvestingTotal(investingSum);
+
+    const colorize = (map: Map<string, number>, offset = 0): ExpenseRow[] =>
+      Array.from(map.entries())
+        .sort((a, b) => b[1] - a[1])
+        .map(([name, amount], index) => ({
+          name,
+          amount,
+          color: chartColors[(index + offset) % chartColors.length],
+        }));
+
+    setGivingRows(colorize(givingByName, 2));
+    setSavingsRows(colorize(savingsByName, 4));
+    setInvestingRows(colorize(investingByName, 6));
   };
 
   const handleUpdateIncome = async () => {
@@ -293,12 +320,26 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
   const savingsDelta = roundToCents(recommendedSavings - savingsTotal);
   const savingsMeetsTarget = savingsTotal >= savingsTarget;
   const investingTarget = roundToCents(incomeTotal * 0.1);
-  const recommendedInvesting = investingTotal > investingTarget ? investingTotal : investingTarget;
-  const investingDelta = roundToCents(recommendedInvesting - investingTotal);
+  const rawRecommendedInvesting = investingTotal > investingTarget ? investingTotal : investingTarget;
   const investingMeetsTarget = investingTotal >= investingTarget;
+  const personalSpendingNames = ["entertainment", "dining out"];
+  const personalSpendingTotal = roundToCents(
+    expenseRows
+      .filter((expense) => personalSpendingNames.includes(expense.name.trim().toLowerCase()))
+      .reduce((sum, expense) => sum + expense.amount, 0)
+  );
+  const personalSpendingTarget = roundToCents(incomeTotal * 0.03);
+  const recommendedPersonalSpending = personalSpendingTotal > personalSpendingTarget
+    ? personalSpendingTarget
+    : personalSpendingTotal;
+  const personalSpendingDelta = roundToCents(recommendedPersonalSpending - personalSpendingTotal);
+  const personalSpendingMeetsTarget = personalSpendingTotal <= personalSpendingTarget;
   const requiredExpensesTotal = roundToCents(
     expenseRows
-      .filter((expense) => expense.name.trim().toLowerCase() !== "housing/rent")
+      .filter((expense) => {
+        const name = expense.name.trim().toLowerCase();
+        return name !== "housing/rent" && !personalSpendingNames.includes(name);
+      })
       .reduce((sum, expense) => sum + expense.amount, 0)
   );
   const requiredExpensesTarget = roundToCents(incomeTotal * 0.25);
@@ -307,9 +348,16 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
     : requiredExpensesTotal;
   const requiredExpensesDelta = roundToCents(recommendedRequiredExpenses - requiredExpensesTotal);
   const requiredExpensesMeetsTarget = requiredExpensesTotal <= requiredExpensesTarget;
-  const remainingRecommendedFunds = roundToCents(
-    incomeTotal - recommendedHousing - recommendedRequiredExpenses - recommendedGiving - recommendedSavings - recommendedInvesting
+
+  const rawRemainingFunds = roundToCents(
+    incomeTotal - recommendedHousing - recommendedRequiredExpenses - recommendedPersonalSpending - recommendedGiving - recommendedSavings - rawRecommendedInvesting
   );
+  const investingReduction = rawRemainingFunds < 0
+    ? Math.min(Math.abs(rawRemainingFunds), rawRecommendedInvesting)
+    : 0;
+  const recommendedInvesting = roundToCents(rawRecommendedInvesting - investingReduction);
+  const investingDelta = roundToCents(recommendedInvesting - investingTotal);
+  const remainingRecommendedFunds = roundToCents(rawRemainingFunds + investingReduction);
 
   const finalBalance = roundToCents(
     incomeTotal - totalExpenses - debtBalance - givingTotal - savingsTotal - investingTotal
@@ -334,7 +382,7 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
         {/* Welcome Header */}
         <div className="mb-8">
           <h1 className="text-3xl text-gray-900 mb-2">Welcome back, {userName}!</h1>
-          <p className="text-gray-600">Achieve your financial goals</p>
+          <p className="text-gray-600">Here is your recommended budget.</p>
         </div>
 
         {/* Summary Cards */}
@@ -395,35 +443,24 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
           </Card>
         </div>
 
-        <Card className="p-6 mb-8">
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <div>
-              <h2 className="text-xl text-gray-900">Recommended Budget</h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Housing and rent should generally stay near 25% of monthly income unless your current amount is already lower.
-              </p>
-            </div>
-            <div
-              className={`text-sm px-3 py-1 rounded-full ${
-                hasHousingData && housingExpense <= housingTarget ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
-              }`}
-            >
-              {hasHousingData && housingExpense <= housingTarget ? "Housing Within Target" : "Housing Above Target"}
-            </div>
-          </div>
-
-          <div className="rounded-lg border bg-white p-5 mb-6">
-            <p className="text-xs text-gray-500">Total Income</p>
-            <p className="text-3xl text-gray-900 mt-1">${incomeTotal.toLocaleString()}</p>
-          </div>
-
+        {/* Income Card */}
+        <Card className="p-6 mb-6">
+          <h2 className="text-xl text-gray-900 mb-4">Recommended Budget</h2>
           {syncError && (
             <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {syncError}
             </div>
           )}
+          <div className="rounded-lg border bg-white p-5">
+            <p className="text-xs text-gray-500">Total Income</p>
+            <p className="text-3xl text-gray-900 mt-1">${incomeTotal.toLocaleString()}</p>
+          </div>
+        </Card>
 
-          <div className="grid md:grid-cols-3 gap-4 mb-6">
+        {/* Housing Card */}
+        <Card className="p-6 mb-6">
+          <h2 className="text-xl text-gray-900 mb-4">Housing / Rent</h2>
+          <div className="grid md:grid-cols-3 gap-4 mb-4">
             <div className="rounded-lg border bg-white p-4">
               <p className="text-xs text-gray-500">Current Housing/Rent</p>
               <p className="text-xl text-gray-900 mt-1">${housingExpense.toLocaleString()}</p>
@@ -439,7 +476,6 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
               </p>
             </div>
           </div>
-
           {incomeTotal > 0 ? (
             <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
               {hasHousingData ? (
@@ -455,10 +491,19 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
               No income data found for this template. Add income to receive a housing recommendation.
             </div>
           )}
+        </Card>
 
-          {incomeTotal > 0 && (
-            <>
-              <div className="grid md:grid-cols-4 gap-4 mt-6 mb-6">
+        {incomeTotal > 0 && (
+          <>
+            {/* Required Expenses Card */}
+            <Card className="p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl text-gray-900">Required Expenses</h2>
+                <Button variant="outline" size="sm" onClick={() => setShowExpenseBreakdown((v) => !v)}>
+                  {showExpenseBreakdown ? "Hide Breakdown" : "See Breakdown"}
+                </Button>
+              </div>
+              <div className="grid md:grid-cols-4 gap-4 mb-4">
                 <div className="rounded-lg border bg-white p-4">
                   <p className="text-xs text-gray-500">Current Required Expenses</p>
                   <p className="text-xl text-gray-900 mt-1">${requiredExpensesTotal.toLocaleString()}</p>
@@ -478,14 +523,119 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
                   </p>
                 </div>
               </div>
-
               <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
                 {requiredExpensesMeetsTarget
                   ? `Your required expenses are already within the 25% recommended limit at $${requiredExpensesTotal.toLocaleString()}.`
                   : `To meet the 25% guideline, reduce required expenses from $${requiredExpensesTotal.toLocaleString()} to about $${recommendedRequiredExpenses.toLocaleString()}.`}
               </div>
 
-              <div className="grid md:grid-cols-4 gap-4 mt-6 mb-6">
+              {showExpenseBreakdown && (() => {
+                const breakdownRows = expenseRows.filter(
+                  (e) => !personalSpendingNames.includes(e.name.trim().toLowerCase()) && e.name.trim().toLowerCase() !== "housing/rent"
+                );
+                return breakdownRows.length > 0 ? (
+                  <div className="mt-4 space-y-3">
+                    {breakdownRows.map((expense) => (
+                      <div key={expense.name}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm text-gray-700">{expense.name}</span>
+                          <span className="text-sm text-gray-900">
+                            ${expense.amount.toLocaleString()} / ${requiredExpensesTotal.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`${expense.color} h-2 rounded-full transition-all`}
+                            style={{
+                              width: `${requiredExpensesTotal > 0
+                                ? Math.min((expense.amount / requiredExpensesTotal) * 100, 100)
+                                : 0}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-4 text-sm text-gray-500">No required expense items found.</p>
+                );
+              })()}
+            </Card>
+
+            {/* Personal Spending Card */}
+            <Card className="p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl text-gray-900">Personal Spending</h2>
+                <Button variant="outline" size="sm" onClick={() => setShowPersonalBreakdown((v) => !v)}>
+                  {showPersonalBreakdown ? "Hide Breakdown" : "See Breakdown"}
+                </Button>
+              </div>
+              <div className="grid md:grid-cols-4 gap-4 mb-4">
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Current Personal Spending</p>
+                  <p className="text-xl text-gray-900 mt-1">${personalSpendingTotal.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Personal Spending Target</p>
+                  <p className="text-xl text-gray-900 mt-1">${personalSpendingTarget.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Recommended Personal Spending</p>
+                  <p className="text-xl text-gray-900 mt-1">${recommendedPersonalSpending.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Spending Adjustment</p>
+                  <p className={`text-xl mt-1 ${personalSpendingDelta < 0 ? "text-red-600" : "text-green-700"}`}>
+                    {personalSpendingDelta < 0 ? `-$${Math.abs(personalSpendingDelta).toLocaleString()}` : `$${personalSpendingDelta.toLocaleString()}`}
+                  </p>
+                </div>
+              </div>
+              <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
+                {personalSpendingMeetsTarget
+                  ? `Your personal spending (Entertainment + Dining Out) is already within the 3% recommended limit at $${personalSpendingTotal.toLocaleString()}.`
+                  : `To meet the 3% guideline, reduce personal spending from $${personalSpendingTotal.toLocaleString()} to about $${recommendedPersonalSpending.toLocaleString()}.`}
+              </div>
+
+              {showPersonalBreakdown && (() => {
+                const breakdownRows = expenseRows.filter(
+                  (e) => personalSpendingNames.includes(e.name.trim().toLowerCase())
+                );
+                return breakdownRows.length > 0 ? (
+                  <div className="mt-4 space-y-3">
+                    {breakdownRows.map((expense) => (
+                      <div key={expense.name}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm text-gray-700">{expense.name}</span>
+                          <span className="text-sm text-gray-900">
+                            ${expense.amount.toLocaleString()} / ${personalSpendingTotal.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`${expense.color} h-2 rounded-full transition-all`}
+                            style={{
+                              width: `${personalSpendingTotal > 0
+                                ? Math.min((expense.amount / personalSpendingTotal) * 100, 100)
+                                : 0}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-4 text-sm text-gray-500">No personal spending items found.</p>
+                );
+              })()}
+            </Card>
+            <Card className="p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl text-gray-900">Giving</h2>
+                <Button variant="outline" size="sm" onClick={() => setShowGivingBreakdown((v) => !v)}>
+                  {showGivingBreakdown ? "Hide Breakdown" : "See Breakdown"}
+                </Button>
+              </div>
+              <div className="grid md:grid-cols-4 gap-4 mb-4">
                 <div className="rounded-lg border bg-white p-4">
                   <p className="text-xs text-gray-500">Current Giving</p>
                   <p className="text-xl text-gray-900 mt-1">${givingTotal.toLocaleString()}</p>
@@ -505,14 +655,47 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
                   </p>
                 </div>
               </div>
-
               <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
                 {givingMeetsTarget
                   ? `Your current giving already meets or exceeds the 10% recommendation, so the recommended amount stays at $${recommendedGiving.toLocaleString()}.`
                   : `A recommended giving amount is $${recommendedGiving.toLocaleString()}, which is 10% of total income.`}
               </div>
 
-              <div className="grid md:grid-cols-4 gap-4 mt-6 mb-6">
+              {showGivingBreakdown && (
+                givingRows.length > 0 ? (
+                  <div className="mt-4 space-y-3">
+                    {givingRows.map((row) => (
+                      <div key={row.name}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm text-gray-700">{row.name}</span>
+                          <span className="text-sm text-gray-900">
+                            ${row.amount.toLocaleString()} / ${givingTotal.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`${row.color} h-2 rounded-full transition-all`}
+                            style={{ width: `${givingTotal > 0 ? Math.min((row.amount / givingTotal) * 100, 100) : 0}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-4 text-sm text-gray-500">No giving items found.</p>
+                )
+              )}
+            </Card>
+
+            {/* Savings Card */}
+            <Card className="p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl text-gray-900">Savings</h2>
+                <Button variant="outline" size="sm" onClick={() => setShowSavingsBreakdown((v) => !v)}>
+                  {showSavingsBreakdown ? "Hide Breakdown" : "See Breakdown"}
+                </Button>
+              </div>
+              <div className="grid md:grid-cols-4 gap-4 mb-4">
                 <div className="rounded-lg border bg-white p-4">
                   <p className="text-xs text-gray-500">Current Savings</p>
                   <p className="text-xl text-gray-900 mt-1">${savingsTotal.toLocaleString()}</p>
@@ -532,14 +715,47 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
                   </p>
                 </div>
               </div>
-
               <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
                 {savingsMeetsTarget
                   ? `Your current savings already meet or exceed the 10% recommendation, so the recommended amount stays at $${recommendedSavings.toLocaleString()}.`
                   : `A recommended savings amount is $${recommendedSavings.toLocaleString()}, which is 10% of total income.`}
               </div>
 
-              <div className="grid md:grid-cols-4 gap-4 mt-6 mb-6">
+              {showSavingsBreakdown && (
+                savingsRows.length > 0 ? (
+                  <div className="mt-4 space-y-3">
+                    {savingsRows.map((row) => (
+                      <div key={row.name}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm text-gray-700">{row.name}</span>
+                          <span className="text-sm text-gray-900">
+                            ${row.amount.toLocaleString()} / ${savingsTotal.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`${row.color} h-2 rounded-full transition-all`}
+                            style={{ width: `${savingsTotal > 0 ? Math.min((row.amount / savingsTotal) * 100, 100) : 0}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-4 text-sm text-gray-500">No savings items found.</p>
+                )
+              )}
+            </Card>
+
+            {/* Investing Card */}
+            <Card className="p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl text-gray-900">Investing</h2>
+                <Button variant="outline" size="sm" onClick={() => setShowInvestingBreakdown((v) => !v)}>
+                  {showInvestingBreakdown ? "Hide Breakdown" : "See Breakdown"}
+                </Button>
+              </div>
+              <div className="grid md:grid-cols-4 gap-4 mb-4">
                 <div className="rounded-lg border bg-white p-4">
                   <p className="text-xs text-gray-500">Current Investing</p>
                   <p className="text-xl text-gray-900 mt-1">${investingTotal.toLocaleString()}</p>
@@ -554,19 +770,47 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
                 </div>
                 <div className="rounded-lg border bg-white p-4">
                   <p className="text-xs text-gray-500">Investing Adjustment</p>
-                  <p className={`text-xl mt-1 ${investingDelta > 0 ? "text-amber-600" : "text-green-700"}`}>
+                  <p className={`text-xl mt-1 ${investingDelta > 0 ? "text-amber-600" : investingDelta < 0 ? "text-red-600" : "text-green-700"}`}>
                     {investingDelta > 0 ? `+$${investingDelta.toLocaleString()}` : `$${investingDelta.toLocaleString()}`}
                   </p>
                 </div>
               </div>
-
               <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
                 {investingMeetsTarget
                   ? `Your current investing already meets or exceeds the 10% recommendation, so the recommended amount stays at $${recommendedInvesting.toLocaleString()}.`
                   : `A recommended investing amount is $${recommendedInvesting.toLocaleString()}, which is 10% of total income.`}
               </div>
 
-              <div className="rounded-lg border bg-white px-5 py-4 mt-6 text-gray-900">
+              {showInvestingBreakdown && (
+                investingRows.length > 0 ? (
+                  <div className="mt-4 space-y-3">
+                    {investingRows.map((row) => (
+                      <div key={row.name}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm text-gray-700">{row.name}</span>
+                          <span className="text-sm text-gray-900">
+                            ${row.amount.toLocaleString()} / ${investingTotal.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`${row.color} h-2 rounded-full transition-all`}
+                            style={{ width: `${investingTotal > 0 ? Math.min((row.amount / investingTotal) * 100, 100) : 0}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-4 text-sm text-gray-500">No investing items found.</p>
+                )
+              )}
+            </Card>
+
+            {/* Remaining Funds Card */}
+            <Card className="p-6 mb-8">
+              <h2 className="text-xl text-gray-900 mb-4">Remaining Funds</h2>
+              <div className="rounded-lg border bg-white px-5 py-4">
                 <p className="text-xs text-gray-500">Remaining Funds Based on Recommendations</p>
                 <p className={`text-3xl mt-1 ${remainingRecommendedFunds < 0 ? "text-red-600" : "text-gray-900"}`}>
                   ${remainingRecommendedFunds.toLocaleString()}
@@ -575,9 +819,9 @@ export function FinancialGoals({ onCreateBudget }: FinancialGoalsProps) {
                   Total income minus recommended housing/rent, required expenses, giving, savings, and investing.
                 </p>
               </div>
-            </>
-          )}
-        </Card>
+            </Card>
+          </>
+        )}
 
         {/* Main Content Grid */}
         <div className="grid lg:grid-cols-3 gap-6">
