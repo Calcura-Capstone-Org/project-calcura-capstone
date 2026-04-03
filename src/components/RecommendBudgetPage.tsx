@@ -67,7 +67,7 @@ const toMonthlyAmount = (item: TemplateItemApi): number => {
 };
 
 export function RecommendBudgetPage({ onCreateBudget }: RecommendBudgetPageProps) {
-  const [userName, setUserName] = useState("John");
+  const [userName, setUserName] = useState("Guest");
   const [userTemplates, setUserTemplates] = useState<TemplateOption[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [incomeTotal, setIncomeTotal] = useState(0);

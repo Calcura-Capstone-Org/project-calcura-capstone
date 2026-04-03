@@ -20,9 +20,11 @@ interface HeaderProps {
   onTemplatesClick?: () => void;
   onFeaturesClick?: () => void;
   isLoggedIn?: boolean;
+  username?: string;
+  onAdminClick?: () => void;
 }
 
-export function Header({ onLoginClick, onSignUpClick, onHomeClick, onAccountClick, onDashboardClick, onTemplatesClick, onAboutClick, onContactClick, onFeaturesClick, isLoggedIn = false }: HeaderProps) {
+export function Header({ onLoginClick, onSignUpClick, onHomeClick, onAccountClick, onDashboardClick, onTemplatesClick, onAboutClick, onContactClick, onFeaturesClick, isLoggedIn = false, username = "", onAdminClick }: HeaderProps) {
   return (
     <header className="bg-white border-b">
       <div className="max-w-7xl mx-auto px-6 py-4">
@@ -74,6 +76,14 @@ export function Header({ onLoginClick, onSignUpClick, onHomeClick, onAccountClic
             >
               Contact
             </button>
+            {username === "admin" && (
+              <button
+                onClick={onAdminClick}
+                className="text-gray-700 hover:text-gray-900"
+              >
+                Admin
+              </button>
+            )}
           </nav>
           
           <div className="flex items-center gap-3">
