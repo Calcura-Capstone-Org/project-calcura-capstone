@@ -1,12 +1,5 @@
-/* Jaren Schneider programmed all 72 lines of code in this file */
 import { Card } from "./ui/card";
 import { TrendingUp, TrendingDown, Wallet, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
-
-/* API URL */
-const API_URL = import.meta.env.VITE_API_URL;
-
-//remove later
-console.log("API_URL =", API_URL);
 
 interface BudgetSummaryProps {
   balance: number;

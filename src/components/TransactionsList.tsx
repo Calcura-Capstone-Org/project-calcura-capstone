@@ -1,12 +1,5 @@
-/* Jaren Schneider wrote all 43 lines of code in this file. */ 
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
-
-/* API URL */
-const API_URL = import.meta.env.VITE_API_URL;
-
-//remove later
-console.log("API_URL =", API_URL);
 
 interface Transaction {
   id: string;

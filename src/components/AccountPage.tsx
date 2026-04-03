@@ -1,126 +1,67 @@
-/* Joseph Spreckels wrote all 153 lines of code for this file */
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Card } from "./ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Settings, User, Bell, Lock, CreditCard, HelpCircle } from "lucide-react";
-
-/* API URL */
-const API_URL = import.meta.env.VITE_API_URL;
-
-//remove later
-console.log("API_URL =", API_URL);
+import { toast } from "sonner@2.0.3";
 
 export function AccountPage() {
   const [name, setName] = useState("John Doe");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("john.doe@example.com");
+  const [phone, setPhone] = useState("+1 (555) 123-4567");
+  const [activeSection, setActiveSection] = useState("profile");
 
-  useEffect(() => {
-    const userEmail = localStorage.getItem("email");
-    const userId = localStorage.getItem("user_id");
+  const handleSaveChanges = () => {
+    toast.success("Profile updated successfully!");
+    console.log("Saved profile:", { name, email, phone });
+  };
 
-    if (userEmail) {
-      setEmail(userEmail);
-    }
+  const handleCancel = () => {
+    // Reset to original values
+    setName("John Doe");
+    setEmail("john.doe@example.com");
+    setPhone("+1 (555) 123-4567");
+    toast.info("Changes discarded");
+  };
 
-    if (userId) {
-      fetch(`${API_URL}/users`) // fallback if we want DB truth for active user
-        .then((res) => {
-          if (!res.ok) {
-            throw new Error("Unable to query users");
-          }
-          return res.json();
-        })
-        .then((users) => {
-          const activeUser = users.find((u: any) => String(u.user_id) === String(userId));
-          if (activeUser) {
-            setEmail(activeUser.email);
-            if (activeUser.name) {
-              setName(activeUser.name);
-            }
-          }
-        })
-        .catch((err) => {
-          console.warn("AccountPage: Could not load active user from API:", err);
-        });
-    }
-  }, []);
+  const handleChangeTemplate = () => {
+    toast.info("Template selection coming soon! You'll be able to switch between Youth, Career, and Retirement templates.");
+  };
 
-  const handleDeleteAccount = async () => {
-    const userId = localStorage.getItem("user_id");
-    if (!userId) {
-      alert("No active user found. Cannot delete account.");
-      return;
-    }
-
-    if (!window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_URL}/users/${userId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        console.error("Delete account failed", errorData);
-        alert("Failed to delete account. Please try again.");
-        return;
-      }
-
-      alert("Account deleted successfully.");
-      localStorage.removeItem("user_id");
-      localStorage.removeItem("email");
-      window.location.href = "/";
-    } catch (err) {
-      console.error("Delete account network error", err);
-      alert("Unable to delete account at this time. Please try again later.");
+  const handleDeleteAccount = () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted."
+    );
+    if (confirmed) {
+      toast.error("Account deletion feature is disabled in demo mode. Your account is safe!");
     }
   };
 
-  const handleSignOut = () => {
-    localStorage.removeItem("user_id");
-    localStorage.removeItem("email");
-    alert("Signed out successfully.");
-    window.location.href = "/";
+  const handleNotifications = () => {
+    setActiveSection("notifications");
+    toast.info("Notification settings coming soon!");
   };
 
-  const handleSaveChanges = async () => {
-    const userId = localStorage.getItem("user_id");
-    if (!userId) {
-      alert("No active user found. Please log in again.");
-      return;
-    }
+  const handleSecurity = () => {
+    setActiveSection("security");
+    toast.info("Security settings coming soon! You'll be able to change your password and enable 2FA.");
+  };
 
-    try {
-      const response = await fetch(`${API_URL}/users/${userId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, email }),
-      });
+  const handleBilling = () => {
+    setActiveSection("billing");
+    toast.info("Billing section - Since Calcura is free, this will show your usage statistics!");
+  };
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        console.error("Failed to update user", errorData);
-        alert(`Unable to save changes: ${errorData?.detail || response.statusText}`);
-        return;
-      }
+  const handlePreferences = () => {
+    setActiveSection("preferences");
+    toast.info("Preferences coming soon! Customize your Calcura experience.");
+  };
 
-      const result = await response.json();
-      setEmail(email);
-      setName(name);
-      localStorage.setItem("email", email);
-      alert("Profile updated successfully.");
-      console.log("User updated", result);
-    } catch (error) {
-      console.error("Network error updating user", error);
-      alert("Network error while saving changes. Please try again.");
-    }
+  const handleHelp = () => {
+    setActiveSection("help");
+    toast.info("Help & Support - Access tutorials, FAQs, and contact support.");
   };
 
   return (
@@ -137,28 +78,49 @@ export function AccountPage() {
           <div className="space-y-2">
             <Button 
               variant="ghost" 
-              className="w-full justify-start gap-3 bg-green-50 text-green-700"
+              className={`w-full justify-start gap-3 ${activeSection === "profile" ? "bg-green-50 text-green-700" : ""}`}
+              onClick={() => setActiveSection("profile")}
             >
               <User size={20} />
               Profile
             </Button>
-            <Button variant="ghost" className="w-full justify-start gap-3">
+            <Button 
+              variant="ghost" 
+              className={`w-full justify-start gap-3 ${activeSection === "notifications" ? "bg-green-50 text-green-700" : ""}`}
+              onClick={handleNotifications}
+            >
               <Bell size={20} />
               Notifications
             </Button>
-            <Button variant="ghost" className="w-full justify-start gap-3">
+            <Button 
+              variant="ghost" 
+              className={`w-full justify-start gap-3 ${activeSection === "security" ? "bg-green-50 text-green-700" : ""}`}
+              onClick={handleSecurity}
+            >
               <Lock size={20} />
               Security
             </Button>
-            <Button variant="ghost" className="w-full justify-start gap-3">
+            <Button 
+              variant="ghost" 
+              className={`w-full justify-start gap-3 ${activeSection === "billing" ? "bg-green-50 text-green-700" : ""}`}
+              onClick={handleBilling}
+            >
               <CreditCard size={20} />
               Billing
             </Button>
-            <Button variant="ghost" className="w-full justify-start gap-3">
+            <Button 
+              variant="ghost" 
+              className={`w-full justify-start gap-3 ${activeSection === "preferences" ? "bg-green-50 text-green-700" : ""}`}
+              onClick={handlePreferences}
+            >
               <Settings size={20} />
               Preferences
             </Button>
-            <Button variant="ghost" className="w-full justify-start gap-3">
+            <Button 
+              variant="ghost" 
+              className={`w-full justify-start gap-3 ${activeSection === "help" ? "bg-green-50 text-green-700" : ""}`}
+              onClick={handleHelp}
+            >
               <HelpCircle size={20} />
               Help & Support
             </Button>
@@ -203,11 +165,28 @@ export function AccountPage() {
                   />
                 </div>
 
+                <div>
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+
                 <div className="flex gap-3 pt-4">
-                  <Button className="bg-green-600 hover:bg-green-700" onClick={handleSaveChanges}>
+                  <Button 
+                    className="bg-green-600 hover:bg-green-700"
+                    onClick={handleSaveChanges}
+                  >
                     Save Changes
                   </Button>
-                  <Button variant="outline">
+                  <Button 
+                    variant="outline"
+                    onClick={handleCancel}
+                  >
                     Cancel
                   </Button>
                 </div>
@@ -227,7 +206,11 @@ export function AccountPage() {
                       Optimized for mid-career professionals
                     </p>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleChangeTemplate}
+                  >
                     Change Template
                   </Button>
                 </div>
@@ -241,14 +224,12 @@ export function AccountPage() {
                 Permanently delete your account and all data
               </p>
               
-              <div className="flex gap-3">
-                <Button variant="destructive" onClick={handleDeleteAccount}>
-                  Delete Account
-                </Button>
-                <Button variant="outline" onClick={handleSignOut}>
-                  Sign Out
-                </Button>
-              </div>
+              <Button 
+                variant="destructive"
+                onClick={handleDeleteAccount}
+              >
+                Delete Account
+              </Button>
             </Card>
           </div>
         </div>

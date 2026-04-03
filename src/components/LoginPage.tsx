@@ -1,22 +1,15 @@
-/* Jaren Schneider wrote all 140 lines of code for this file */
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import logoImage from "../assets/logoImage.png";
-
-/* API URL */
-const API_URL = import.meta.env.VITE_API_URL;
-
-//remove later
-console.log("API_URL =", API_URL);
+import logoImage from "figma:asset/1a36a3a0f13bed42158cef736e0c5fd1e80a9a0c.png";
+import { toast } from "sonner@2.0.3";
 
 interface LoginPageProps {
   onClose?: () => void;
   onCreateAccount?: () => void;
   onContinueAsGuest?: () => void;
   onHomeClick?: () => void;
-  onLoginSuccess?: () => void;
-  onForgotPassword?: () => void;
+  onLoginSuccess?: (email: string) => void;
 }
 
 export function LoginPage({
@@ -25,58 +18,29 @@ export function LoginPage({
   onContinueAsGuest,
   onHomeClick,
   onLoginSuccess,
-  onForgotPassword,
 }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-
-    try {
-      //const response = await fetch(`${API_URL}/sessions/login`, { method: "POST",
-      const response = await fetch(`${API_URL}/users/login`, { method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          email: email,
-          password: password
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Login failed:", errorData);
-        alert("Invalid email or password. Please try again.");
-        return;
-      }
-
-      const data = await response.json();
-      console.log("Login successful:", data);
-
-      //Store session tokens here? 
-      localStorage.setItem("user_id", data.user_id);
-      localStorage.setItem("email", data.email);
-
-      onLoginSuccess?.();
-
-    } catch (error) {
-      console.error("Network error:", error);
-      alert("Unable to reach the server");
-    }
-    
-    // Commenting the following out as it will override the actual login logic
-
-   /* console.log("Login attempt with:", email);
+    // Handle login logic here
+    console.log("Login attempt with:", email);
+    toast.success("Login successful! Welcome to Calcura.");
     // Call the success handler to navigate to dashboard
     if (onLoginSuccess) {
-      onLoginSuccess();
-    }*/
+      onLoginSuccess(email);
+    }
   };
 
   const handleForgotPassword = () => {
-    onForgotPassword?.();
     // Handle forgot password logic
-    console.log("Forgot password clicked");
+    if (!email) {
+      toast.error("Please enter your email address first.");
+      return;
+    }
+    toast.success(`Password reset link sent to ${email}. Please check your inbox.`);
+    console.log("Forgot password clicked for:", email);
   };
 
   return (

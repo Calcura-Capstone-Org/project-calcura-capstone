@@ -1,4 +1,3 @@
-/*Jonathan Torres wrote all 242 lines of code for this file */
 import { useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
@@ -7,12 +6,6 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Mail, Phone, MapPin, Send, MessageSquare } from "lucide-react";
 import { toast } from "sonner@2.0.3";
-
-/* API URL */
-const API_URL = import.meta.env.VITE_API_URL;
-
-//remove later
-console.log("API_URL =", API_URL);
 
 export function ContactPage() {
   const [formData, setFormData] = useState({
@@ -76,6 +69,35 @@ export function ContactPage() {
                   <h3 className="text-lg text-gray-900 mb-1">Email</h3>
                   <p className="text-sm text-gray-600">support@calcura.com</p>
                   <p className="text-sm text-gray-600">hello@calcura.com</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Phone className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg text-gray-900 mb-1">Phone</h3>
+                  <p className="text-sm text-gray-600">+1 (555) 123-4567</p>
+                  <p className="text-xs text-gray-500 mt-1">Mon-Fri, 9AM-5PM EST</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg text-gray-900 mb-1">Office</h3>
+                  <p className="text-sm text-gray-600">
+                    123 Finance Street<br />
+                    Suite 400<br />
+                    New York, NY 10001
+                  </p>
                 </div>
               </div>
             </Card>

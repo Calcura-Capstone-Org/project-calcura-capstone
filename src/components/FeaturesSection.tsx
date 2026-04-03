@@ -1,12 +1,5 @@
-/* Jaren Schenider wrote all 46 lines of code for this file.*/
 import { Card } from "./ui/card";
 import { BarChart3, Calendar, Search } from "lucide-react";
-
-/* API URL */
-const API_URL = import.meta.env.VITE_API_URL;
-
-//remove later
-console.log("API_URL =", API_URL);
 
 const features = [
   {
@@ -22,7 +15,7 @@ const features = [
   {
     icon: Search,
     title: "Financial Insights",
-    description: "Get insights and recommendations to optimize your financial health"
+    description: "Get AI-powered insights and recommendations to optimize your financial health"
   }
 ];
 

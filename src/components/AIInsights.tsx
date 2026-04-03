@@ -1,13 +1,6 @@
-/* Jaeyeong Shin programmed all 69 lines of code in this file*/
 import { Card } from "./ui/card";
 import { Sparkles, TrendingUp, AlertCircle, Target } from "lucide-react";
 import { Badge } from "./ui/badge";
-
-/* API URL */
-const API_URL = import.meta.env.VITE_API_URL;
-
-//remove later
-console.log("API_URL =", API_URL);
 
 interface Insight {
   id: string;

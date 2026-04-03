@@ -2,16 +2,12 @@
 
 ## Main Application
 
-### Section written by Jaren Schneider, Jaehyeong Shin, Jonathan Torres, Joseph Spreckels, Joseph St. John, & Emma Wikingstad. 
-
 ### App.tsx
-Main application component that manages state-based routing between all pages (landing, template, login, account, dashboard, about, contact) and handles user authentication state. 
+Main application component that manages state-based routing between all pages (landing, template, login, account, dashboard, about, contact) and handles user authentication state.
 
 ---
 
 ## Page Components
-
-### Section Written by Jaren Schneider, Jaehyeong Shin, Jonathan Torres, & Joseph Spreckels. 
 
 ### AboutPage.tsx
 Informational page that displays the company's mission, values, and background story about the Calcura budget app.
@@ -34,7 +30,6 @@ Comprehensive 9-section budget template builder where users create customized bu
 ---
 
 ## Landing Page Sections
-### Section written by Joseph St. John & Jaren Schneider. 
 
 ### HeroSection.tsx
 Top section of the landing page featuring the main headline, value proposition, and primary call-to-action buttons.
@@ -51,8 +46,6 @@ Section displaying user testimonials and reviews to build trust and credibility.
 ---
 
 ## Dashboard Components
-
-### Section written by Jaehyeong Shin & Jaren Schneider.
 
 ### AIInsights.tsx
 Component that displays AI-generated budgeting recommendations and personalized financial insights.
@@ -82,8 +75,6 @@ Interactive component enabling users to perform scenario planning and what-if fi
 
 ## Shared Components
 
-### Section written by Jonathan Torres & Jaren Schneider. 
-
 ### Header.tsx
 Global navigation header component with Calcura logo and conditional navigation links (Login/Sign Up when logged out, Account/Dashboard when logged in).
 
@@ -96,8 +87,6 @@ Floating feedback button component that allows users to quickly submit feedback 
 ---
 
 ## UI Components (shadcn/ui)
-
-### Section written by Jaren Schneider, Joseph Spreckels, & Jaehyeong Shin. 
 
 ### components/ui/accordion.tsx
 Collapsible accordion component for displaying expandable content sections.
@@ -247,8 +236,6 @@ Utility functions for UI component styling and class name management.
 
 ## System Components
 
-### Section written by Jonathan Torres & Jaren Schneider. 
-
 ### components/figma/ImageWithFallback.tsx
 Protected system component for handling images with automatic fallback support (do not modify).
 
@@ -256,16 +243,12 @@ Protected system component for handling images with automatic fallback support (
 
 ## Styles
 
-### Section written by Jaren Schneider, Jonathan Torres, Jaehyeong Shin, & Joseph Spreckels. 
-
 ### styles/globals.css
 Global CSS file containing Tailwind configuration, custom tokens, typography defaults, and design system variables.
 
 ---
 
 ## Documentation Files
-
-### Section written by Jaren Schneider, Jonathan Torres, Emma Wikingstad, & Joseph St. John. 
 
 ### Attributions.md
 Documentation file containing credits and attributions for third-party resources used in the project.
