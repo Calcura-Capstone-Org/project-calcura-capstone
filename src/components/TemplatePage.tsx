@@ -1,4 +1,5 @@
-﻿import { useEffect, useState } from "react";
+﻿/*Jonathan Torres wrote all 1186 lines of code for this file */
+import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -73,9 +74,11 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
   
   // Savings section
   const [savingsAccounts, setSavingsAccounts] = useState<Savings[]>([]);
+  const [monthlySavingsContributions, setMonthlySavingsContributions] = useState<Savings[]>([]);
   
   // Investing section
   const [investments, setInvestments] = useState<Investment[]>([]);
+  const [monthlyInvestmentContributions, setMonthlyInvestmentContributions] = useState<Investment[]>([]);
   
   // Retirement question
   const [showRetirementQuestion, setShowRetirementQuestion] = useState(false);
@@ -218,6 +221,23 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
     setSavingsAccounts(savingsAccounts.filter(saving => saving.id !== id));
   };
 
+  const addMonthlySavingsContribution = () => {
+    setMonthlySavingsContributions([
+      ...monthlySavingsContributions,
+      { id: Date.now().toString(), accountName: "", amount: "" }
+    ]);
+  };
+
+  const updateMonthlySavingsContribution = (id: string, field: keyof Savings, value: string) => {
+    setMonthlySavingsContributions(monthlySavingsContributions.map(contrib =>
+      contrib.id === id ? { ...contrib, [field]: value } : contrib
+    ));
+  };
+
+  const removeMonthlySavingsContribution = (id: string) => {
+    setMonthlySavingsContributions(monthlySavingsContributions.filter(contrib => contrib.id !== id));
+  };
+
   const addInvestment = () => {
     setInvestments([
       ...investments,
@@ -233,6 +253,23 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
 
   const removeInvestment = (id: string) => {
     setInvestments(investments.filter(inv => inv.id !== id));
+  };
+
+  const addMonthlyInvestmentContribution = () => {
+    setMonthlyInvestmentContributions([
+      ...monthlyInvestmentContributions,
+      { id: Date.now().toString(), accountName: "", amount: "" }
+    ]);
+  };
+
+  const updateMonthlyInvestmentContribution = (id: string, field: keyof Investment, value: string) => {
+    setMonthlyInvestmentContributions(monthlyInvestmentContributions.map(contrib =>
+      contrib.id === id ? { ...contrib, [field]: value } : contrib
+    ));
+  };
+
+  const removeMonthlyInvestmentContribution = (id: string) => {
+    setMonthlyInvestmentContributions(monthlyInvestmentContributions.filter(contrib => contrib.id !== id));
   };
 
   const saveTemplate = async () => {
@@ -396,6 +433,26 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
         })
         .filter((req) => req !== null) as Promise<Response>[];
 
+      const monthlySavingsFetches = monthlySavingsContributions
+        .map((contrib) => {
+          const amount = parseFloat(contrib.amount);
+          if (!contrib.accountName || Number.isNaN(amount) || amount <= 0) {
+            return null;
+          }
+
+          return fetch(`${API_URL}/template_items/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              template_id: templateId,
+              category_id: 511,
+              planned_amt: amount,
+              item_name: contrib.accountName
+            })
+          });
+        })
+        .filter((req) => req !== null) as Promise<Response>[];
+
       const investingFetches = investments
         .map((investment) => {
           const amount = parseFloat(investment.amount);
@@ -415,7 +472,26 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
         })
         .filter((req) => req !== null) as Promise<Response>[];
 
-      const itemFetches = [...expenseFetches, ...debtFetches, ...donationFetches, ...savingsFetches, ...investingFetches];
+      const monthlyInvestingFetches = monthlyInvestmentContributions
+        .map((contrib) => {
+          const amount = parseFloat(contrib.amount);
+          if (!contrib.accountName || Number.isNaN(amount) || amount <= 0) {
+            return null;
+          }
+          return fetch(`${API_URL}/template_items/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              template_id: templateId,
+              category_id: 611,
+              planned_amt: amount,
+              item_name: contrib.accountName
+            })
+          });
+        })
+        .filter((req) => req !== null) as Promise<Response>[];
+
+      const itemFetches = [...expenseFetches, ...debtFetches, ...donationFetches, ...savingsFetches, ...monthlySavingsFetches, ...investingFetches, ...monthlyInvestingFetches];
 
       if (itemFetches.length > 0) {
         const itemResponses = await Promise.all(itemFetches);
@@ -930,7 +1006,7 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
             {/* Savings Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-purple-900">Savings Accounts (Grow)</CardTitle>
+                <CardTitle className="text-gray-900">Savings Accounts (Grow)</CardTitle>
                 <CardDescription>Add your savings accounts and current balances</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -974,10 +1050,57 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
               </CardContent>
             </Card>
 
+            {/* Monthly Savings Contribution Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-gray-900">Monthly Savings Contribution</CardTitle>
+                <CardDescription>Add your monthly savings contributions</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {monthlySavingsContributions.map((contrib) => (
+                  <div key={contrib.id} className="flex gap-3 items-end">
+                    <div className="flex-1 space-y-2">
+                      <Label>Account Name</Label>
+                      <Input
+                        placeholder="e.g., Emergency Fund, Vacation Savings"
+                        value={contrib.accountName}
+                        onChange={(e) => updateMonthlySavingsContribution(contrib.id, "accountName", e.target.value)}
+                      />
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <Label>Current Balance</Label>
+                      <Input
+                        type="number"
+                        placeholder="0.00"
+                        value={contrib.amount}
+                        onChange={(e) => updateMonthlySavingsContribution(contrib.id, "amount", e.target.value)}
+                      />
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => removeMonthlySavingsContribution(contrib.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+
+                <Button
+                  variant="outline"
+                  onClick={addMonthlySavingsContribution}
+                  className="w-full"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Monthly Savings Contribution
+                </Button>
+              </CardContent>
+            </Card>
+
             {/* Investments Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-purple-900">Investment Accounts (Grow)</CardTitle>
+                <CardTitle className="text-gray-900">Investment Accounts (Grow)</CardTitle>
                 <CardDescription>Add your investment accounts and current values</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1017,6 +1140,53 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Investment Account
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Monthly Investment Contribution Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-gray-900">Monthly Investment Account Contribution</CardTitle>
+                <CardDescription>Add your monthly investment contributions</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {monthlyInvestmentContributions.map((contrib) => (
+                  <div key={contrib.id} className="flex gap-3 items-end">
+                    <div className="flex-1 space-y-2">
+                      <Label>Account Name</Label>
+                      <Input
+                        placeholder="e.g., 401(k), IRA, Brokerage"
+                        value={contrib.accountName}
+                        onChange={(e) => updateMonthlyInvestmentContribution(contrib.id, "accountName", e.target.value)}
+                      />
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <Label>Current Value</Label>
+                      <Input
+                        type="number"
+                        placeholder="0.00"
+                        value={contrib.amount}
+                        onChange={(e) => updateMonthlyInvestmentContribution(contrib.id, "amount", e.target.value)}
+                      />
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => removeMonthlyInvestmentContribution(contrib.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+
+                <Button
+                  variant="outline"
+                  onClick={addMonthlyInvestmentContribution}
+                  className="w-full"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Monthly Investment Contribution
                 </Button>
               </CardContent>
             </Card>
@@ -1093,8 +1263,16 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
                       <span className="font-medium">{savingsAccounts.length} accounts</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b">
+                      <span className="text-gray-700">Monthly Savings Contributions</span>
+                      <span className="font-medium">{monthlySavingsContributions.length} contributions</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b">
                       <span className="text-gray-700">Investment Accounts</span>
                       <span className="font-medium">{investments.length} accounts</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b">
+                      <span className="text-gray-700">Monthly Investment Contributions</span>
+                      <span className="font-medium">{monthlyInvestmentContributions.length} contributions</span>
                     </div>
                   </div>
                 </div>

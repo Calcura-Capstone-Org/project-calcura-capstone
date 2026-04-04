@@ -85,6 +85,7 @@ export function RecommendBudgetPage({ onCreateBudget }: RecommendBudgetPageProps
   const [showGivingBreakdown, setShowGivingBreakdown] = useState(false);
   const [showSavingsBreakdown, setShowSavingsBreakdown] = useState(false);
   const [showInvestingBreakdown, setShowInvestingBreakdown] = useState(false);
+  const [showDebtBreakdown, setShowDebtBreakdown] = useState(false);
 
   const fetchJson = async <T,>(endpoint: string): Promise<T | null> => {
     if (!API_URL) {
@@ -239,15 +240,19 @@ export function RecommendBudgetPage({ onCreateBudget }: RecommendBudgetPageProps
 
       const isSavings = type ? type === "savings" : itemCategoryId >= 500 && itemCategoryId < 600;
       if (isSavings) {
-        savingsSum = roundToCents(savingsSum + plannedAmount);
-        savingsByName.set(rowName, roundToCents((savingsByName.get(rowName) ?? 0) + plannedAmount));
+        if (itemCategoryId === 511) {
+          savingsSum = roundToCents(savingsSum + plannedAmount);
+          savingsByName.set(rowName, roundToCents((savingsByName.get(rowName) ?? 0) + plannedAmount));
+        }
         continue;
       }
 
       const isInvesting = type ? type === "investments" : itemCategoryId >= 600 && itemCategoryId < 700;
       if (isInvesting) {
-        investingSum = roundToCents(investingSum + plannedAmount);
-        investingByName.set(rowName, roundToCents((investingByName.get(rowName) ?? 0) + plannedAmount));
+        if (itemCategoryId === 611) {
+          investingSum = roundToCents(investingSum + plannedAmount);
+          investingByName.set(rowName, roundToCents((investingByName.get(rowName) ?? 0) + plannedAmount));
+        }
       }
     }
 
@@ -359,6 +364,21 @@ export function RecommendBudgetPage({ onCreateBudget }: RecommendBudgetPageProps
   const investingDelta = roundToCents(recommendedInvesting - investingTotal);
   const remainingRecommendedFunds = roundToCents(rawRemainingFunds + investingReduction);
 
+  // Ensure there is enough to cover the current monthly debt contribution.
+  // Shortfall is how much remaining funds fall short of debtBalance.
+  const debtShortfall = roundToCents(Math.max(0, debtBalance - Math.max(0, remainingRecommendedFunds)));
+  // First pull from investing, then from savings to cover the shortfall.
+  const debtInvestingReduction = Math.min(debtShortfall, recommendedInvesting);
+  const debtSavingsReduction = roundToCents(Math.min(debtShortfall - debtInvestingReduction, recommendedSavings));
+  const adjustedRecommendedInvesting = roundToCents(recommendedInvesting - debtInvestingReduction);
+  const adjustedRecommendedSavings = roundToCents(recommendedSavings - debtSavingsReduction);
+  const adjustedRemainingFunds = roundToCents(remainingRecommendedFunds + debtInvestingReduction + debtSavingsReduction);
+  const adjustedInvestingDelta = roundToCents(adjustedRecommendedInvesting - investingTotal);
+  const adjustedSavingsDelta = roundToCents(adjustedRecommendedSavings - savingsTotal);
+
+  const recommendedDebtPayoff = roundToCents(Math.max(0, adjustedRemainingFunds));
+  const debtAdjustment = roundToCents(recommendedDebtPayoff - debtBalance);
+
   const finalBalance = roundToCents(
     incomeTotal - totalExpenses - debtBalance - givingTotal - savingsTotal - investingTotal
   );
@@ -379,10 +399,38 @@ export function RecommendBudgetPage({ onCreateBudget }: RecommendBudgetPageProps
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Welcome Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl text-gray-900 mb-2">Welcome back, {userName}!</h1>
-          <p className="text-gray-600">Here is your recommended budget.</p>
+        {/* Welcome Header + Template Data Source */}
+        <div className="flex flex-row items-start justify-between mb-8 gap-6">
+          <div>
+            <h1 className="text-3xl text-gray-900 mb-2">Welcome back, {userName}!</h1>
+            <p className="text-gray-600">Here is your recommended budget.</p>
+          </div>
+          <Card className="p-4 w-64 shrink-0">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl text-gray-900">Template Data Source</h2>
+              <Button variant="ghost" size="sm" onClick={handleUpdateIncome}>Sync</Button>
+            </div>
+            <div className="space-y-4">
+              {userTemplates.length > 0 ? (
+                <select
+                  className="w-full border rounded px-3 py-2"
+                  value={selectedTemplate}
+                  onChange={(e) => setSelectedTemplate(e.target.value)}
+                >
+                  <option value="" disabled>
+                    Select a template
+                  </option>
+                  {userTemplates.map((template) => (
+                    <option key={template.id} value={String(template.id)}>
+                      {template.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="text-sm text-gray-500">No templates found for your account.</div>
+              )}
+            </div>
+          </Card>
         </div>
 
         {/* Summary Cards */}
@@ -628,6 +676,7 @@ export function RecommendBudgetPage({ onCreateBudget }: RecommendBudgetPageProps
                 );
               })()}
             </Card>
+
             <Card className="p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl text-gray-900">Giving</h2>
@@ -706,19 +755,24 @@ export function RecommendBudgetPage({ onCreateBudget }: RecommendBudgetPageProps
                 </div>
                 <div className="rounded-lg border bg-white p-4">
                   <p className="text-xs text-gray-500">Recommended Savings</p>
-                  <p className="text-xl text-gray-900 mt-1">${recommendedSavings.toLocaleString()}</p>
+                  <p className="text-xl text-gray-900 mt-1">${adjustedRecommendedSavings.toLocaleString()}</p>
                 </div>
                 <div className="rounded-lg border bg-white p-4">
                   <p className="text-xs text-gray-500">Savings Adjustment</p>
-                  <p className={`text-xl mt-1 ${savingsDelta > 0 ? "text-amber-600" : "text-green-700"}`}>
-                    {savingsDelta > 0 ? `+$${savingsDelta.toLocaleString()}` : `$${savingsDelta.toLocaleString()}`}
+                  <p className={`text-xl mt-1 ${adjustedSavingsDelta > 0 ? "text-amber-600" : "text-green-700"}`}>
+                    {adjustedSavingsDelta > 0 ? `+$${adjustedSavingsDelta.toLocaleString()}` : `$${adjustedSavingsDelta.toLocaleString()}`}
                   </p>
                 </div>
               </div>
               <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
                 {savingsMeetsTarget
-                  ? `Your current savings already meet or exceed the 10% recommendation, so the recommended amount stays at $${recommendedSavings.toLocaleString()}.`
-                  : `A recommended savings amount is $${recommendedSavings.toLocaleString()}, which is 10% of total income.`}
+                  ? `Your current savings already meet or exceed the 10% recommendation, so the recommended amount stays at $${adjustedRecommendedSavings.toLocaleString()}.`
+                  : `A recommended savings amount is $${adjustedRecommendedSavings.toLocaleString()}, which is 10% of total income.`}
+                {debtSavingsReduction > 0 && (
+                  <span className="block mt-1 text-amber-700">
+                    Note: ${debtSavingsReduction.toLocaleString()} has been redirected from savings to help cover the monthly debt contribution.
+                  </span>
+                )}
               </div>
 
               {showSavingsBreakdown && (
@@ -766,19 +820,24 @@ export function RecommendBudgetPage({ onCreateBudget }: RecommendBudgetPageProps
                 </div>
                 <div className="rounded-lg border bg-white p-4">
                   <p className="text-xs text-gray-500">Recommended Investing</p>
-                  <p className="text-xl text-gray-900 mt-1">${recommendedInvesting.toLocaleString()}</p>
+                  <p className="text-xl text-gray-900 mt-1">${adjustedRecommendedInvesting.toLocaleString()}</p>
                 </div>
                 <div className="rounded-lg border bg-white p-4">
                   <p className="text-xs text-gray-500">Investing Adjustment</p>
-                  <p className={`text-xl mt-1 ${investingDelta > 0 ? "text-amber-600" : investingDelta < 0 ? "text-red-600" : "text-green-700"}`}>
-                    {investingDelta > 0 ? `+$${investingDelta.toLocaleString()}` : `$${investingDelta.toLocaleString()}`}
+                  <p className={`text-xl mt-1 ${adjustedInvestingDelta > 0 ? "text-amber-600" : adjustedInvestingDelta < 0 ? "text-red-600" : "text-green-700"}`}>
+                    {adjustedInvestingDelta > 0 ? `+$${adjustedInvestingDelta.toLocaleString()}` : `$${adjustedInvestingDelta.toLocaleString()}`}
                   </p>
                 </div>
               </div>
               <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
                 {investingMeetsTarget
-                  ? `Your current investing already meets or exceeds the 10% recommendation, so the recommended amount stays at $${recommendedInvesting.toLocaleString()}.`
-                  : `A recommended investing amount is $${recommendedInvesting.toLocaleString()}, which is 10% of total income.`}
+                  ? `Your current investing already meets or exceeds the 10% recommendation, so the recommended amount stays at $${adjustedRecommendedInvesting.toLocaleString()}.`
+                  : `A recommended investing amount is $${adjustedRecommendedInvesting.toLocaleString()}, which is 10% of total income.`}
+                {debtInvestingReduction > 0 && (
+                  <span className="block mt-1 text-amber-700">
+                    Note: ${debtInvestingReduction.toLocaleString()} has been redirected from investing to help cover the monthly debt contribution.
+                  </span>
+                )}
               </div>
 
               {showInvestingBreakdown && (
@@ -812,103 +871,108 @@ export function RecommendBudgetPage({ onCreateBudget }: RecommendBudgetPageProps
               <h2 className="text-xl text-gray-900 mb-4">Remaining Funds</h2>
               <div className="rounded-lg border bg-white px-5 py-4">
                 <p className="text-xs text-gray-500">Remaining Funds Based on Recommendations</p>
-                <p className={`text-3xl mt-1 ${remainingRecommendedFunds < 0 ? "text-red-600" : "text-gray-900"}`}>
-                  ${remainingRecommendedFunds.toLocaleString()}
+                <p className={`text-3xl mt-1 ${adjustedRemainingFunds < 0 ? "text-red-600" : "text-gray-900"}`}>
+                  ${adjustedRemainingFunds.toLocaleString()}
                 </p>
                 <p className="text-sm text-gray-600 mt-2">
                   Total income minus recommended housing/rent, required expenses, giving, savings, and investing.
                 </p>
               </div>
             </Card>
+
+            {/* Debt Contribution Card */}
+            <Card className="p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl text-gray-900">Debt Contribution</h2>
+                <Button variant="outline" size="sm" onClick={() => setShowDebtBreakdown((v) => !v)}>
+                  {showDebtBreakdown ? "Hide Breakdown" : "See Breakdown"}
+                </Button>
+              </div>
+              <div className="grid md:grid-cols-4 gap-4 mb-4">
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Current Monthly Debt Payments</p>
+                  <p className="text-xl text-gray-900 mt-1">${debtBalance.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Debt Payoff Target</p>
+                  <p className="text-xl text-gray-900 mt-1">Max</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Recommended Debt Payoff</p>
+                  <p className="text-xl text-gray-900 mt-1">${recommendedDebtPayoff.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4">
+                  <p className="text-xs text-gray-500">Debt Adjustment</p>
+                  <p className={`text-xl mt-1 ${debtAdjustment > 0 ? "text-green-700" : "text-gray-400"}`}>
+                    {debtAdjustment > 0 ? `+$${debtAdjustment.toLocaleString()}` : "On target"}
+                  </p>
+                </div>
+              </div>
+              <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700 mb-4">
+                It is recommended that debts are paid off as soon as possible. Applying your remaining funds of ${Math.max(0, adjustedRemainingFunds).toLocaleString()} towards debt brings your recommended monthly debt payoff to ${recommendedDebtPayoff.toLocaleString()}.
+                {(debtInvestingReduction > 0 || debtSavingsReduction > 0) && (
+                  <span className="block mt-1 text-amber-700">
+                    To fully cover your debt contribution, {[
+                      debtInvestingReduction > 0 ? `$${debtInvestingReduction.toLocaleString()} was redirected from investing` : "",
+                      debtSavingsReduction > 0 ? `$${debtSavingsReduction.toLocaleString()} was redirected from savings` : "",
+                    ].filter(Boolean).join(" and ")}.
+                  </span>
+                )}
+              </div>
+              {showDebtBreakdown && (
+                debtRows.length > 0 ? (
+                  <div className="mt-4 space-y-3">
+                    {debtRows.map((row) => (
+                      <div key={row.name}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm text-gray-700">{row.name}</span>
+                          <span className="text-sm text-gray-900">${row.amount.toLocaleString()}</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-red-500 h-2 rounded-full transition-all"
+                            style={{ width: debtBalance > 0 ? `${Math.min((row.amount / debtBalance) * 100, 100)}%` : "0%" }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-4 text-sm text-gray-500">No debt items found.</p>
+                )
+              )}
+            </Card>
           </>
         )}
 
-        {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Spending by Category */}
-          <Card className="lg:col-span-2 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl text-gray-900">Spending by Category</h2>
-              <Button variant="outline" size="sm">View All</Button>
-            </div>
-
-            <div className="space-y-4">
-              {categories.map((category) => (
-                <div key={category.name}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-700">{category.name}</span>
-                    <span className="text-sm text-gray-900">
-                      ${category.amount} / ${category.budget}
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className={`${category.color} h-2 rounded-full transition-all`}
-                      style={{
-                        width: `${category.budget > 0
-                          ? Math.min((category.amount / category.budget) * 100, 100)
-                          : 0}%`,
-                      }}
-                    />
-                  </div>
+        {/* Budget Adjustment Summary */}
+        {incomeTotal > 0 && (
+          <Card className="p-6">
+            <h2 className="text-xl text-gray-900 mb-4">Budget Adjustment Summary</h2>
+            <div className="divide-y">
+              {[
+                { name: "Housing / Rent", delta: housingDelta },
+                { name: "Required Expenses", delta: requiredExpensesDelta },
+                { name: "Personal Spending", delta: personalSpendingDelta },
+                { name: "Giving", delta: givingDelta },
+                { name: "Savings", delta: adjustedSavingsDelta },
+                { name: "Investing", delta: adjustedInvestingDelta },
+                { name: "Debt Contribution", delta: debtAdjustment },
+              ].map(({ name, delta }) => (
+                <div key={name} className="flex items-center justify-between py-3">
+                  <span className="text-sm text-gray-700">{name}</span>
+                  <span className={`text-sm font-medium ${delta < 0 ? "text-red-600" : delta > 0 ? "text-green-700" : "text-gray-400"}`}>
+                    {delta > 0
+                      ? `+$${delta.toLocaleString()}`
+                      : delta < 0
+                      ? `-$${Math.abs(delta).toLocaleString()}`
+                      : "On target"}
+                  </span>
                 </div>
               ))}
             </div>
           </Card>
-
-          {/* Template Source and Debt Snapshot */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl text-gray-900">Template Data Source</h2>
-              <Button variant="ghost" size="sm" onClick={handleUpdateIncome}>Sync</Button>
-            </div>
-
-            <div className="space-y-4">
-            {userTemplates.length > 0 ? (
-              <select
-                className="w-full border rounded px-3 py-2"
-                value={selectedTemplate}
-                onChange={(e) => setSelectedTemplate(e.target.value)}
-              >
-                <option value="" disabled>
-                  Select a template
-                </option>
-                {userTemplates.map((template) => (
-                  <option key={template.id} value={String(template.id)}>
-                    {template.name}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <div className="text-sm text-gray-500">No templates found for your account.</div>
-            )}
-          </div>
-
-            <Button variant="outline" className="w-full mt-4" onClick={handleUpdateIncome}>
-              Update
-            </Button>
-
-            <div className="mt-6">
-              <h3 className="text-sm text-gray-600 mb-2">Debt Balance by Item</h3>
-              {debtRows.length > 0 ? (
-                <div className="space-y-2">
-                  {debtRows.map((debt) => (
-                    <div key={debt.name} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-700">{debt.name}</span>
-                      <span className="text-gray-900">${debt.amount.toLocaleString()}</span>
-                    </div>
-                  ))}
-                  <div className="border-t pt-2 mt-2 flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Total debt balance</span>
-                    <span className="text-gray-900">${debtBalance.toLocaleString()}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-sm text-gray-500">No debt items found in this template.</div>
-              )}
-            </div>
-          </Card>
-        </div>
+        )}
 
         {/* Quick Actions */}
         <div className="grid md:grid-cols-3 gap-6 mt-8">
