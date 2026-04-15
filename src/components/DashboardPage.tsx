@@ -365,10 +365,7 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
             <div className="text-2xl text-gray-900">
               ${budgetSummary.totalIncome.toLocaleString()}
             </div>
-            <div className="flex items-center gap-1 mt-2 text-sm text-green-600">
-              <TrendingUp size={16} />
-              <span>+12% from last month</span>
-            </div>
+            
           </Card>
 
           <Card className="p-6">
@@ -379,10 +376,7 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
             <div className="text-2xl text-gray-900">
               ${budgetSummary.totalExpenses.toLocaleString()}
             </div>
-            <div className="flex items-center gap-1 mt-2 text-sm text-red-600">
-              <TrendingDown size={16} />
-              <span>-5% from last month</span>
-            </div>
+            
           </Card>
 
           <Card className="p-6">
@@ -393,9 +387,7 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
             <div className="text-2xl text-gray-900">
               ${budgetSummary.remaining.toLocaleString()}
             </div>
-            <div className="text-sm text-gray-600 mt-2">
-              35% of monthly income
-            </div>
+            
           </Card>
 
           <Card className="p-6">

@@ -16,21 +16,23 @@ const features = [
   },
   {
     icon: Calendar,
-    title: "Expense Tracking",
-    description: "Track every dollar with ease and see where your money goes in real-time"
+    title: "Goal Setting",
+    description: "Set a financial goal and we will calculate what you need to do to achieve it"
   },
   {
     icon: Search,
-    title: "Financial Insights",
-    description: "Get insights and recommendations to optimize your financial health"
+    title: "Goal Seek Budgeting",
+    description: "Get a budget recommendation to achieve a specific financial goal"
   }
 ];
 
 interface FeaturesSectionProps {
   onRecommendBudgetClick?: () => void;
+  onGoalSettingClick?: () => void;
+  onGoalSeekClick?: () => void;
 }
 
-export function FeaturesSection({ onRecommendBudgetClick }: FeaturesSectionProps) {
+export function FeaturesSection({ onRecommendBudgetClick, onGoalSettingClick, onGoalSeekClick }: FeaturesSectionProps) {
   return (
     <section id="features" className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-6">
@@ -40,11 +42,20 @@ export function FeaturesSection({ onRecommendBudgetClick }: FeaturesSectionProps
           {features.map((feature) => {
             const Icon = feature.icon;
             const isRecommended = feature.title === "Recommended Budget";
+            const isGoalSetting = feature.title === "Goal Setting";
+            const isGoalSeek = feature.title === "Goal Seek Budgeting";
             return (
               <Card
                 key={feature.title}
-                className={`p-8 text-center hover:shadow-lg transition-shadow${isRecommended ? " cursor-pointer" : ""}`}
-                onClick={isRecommended ? onRecommendBudgetClick : undefined}
+                className={`p-8 text-center hover:shadow-lg transition-shadow${
+                  isRecommended || isGoalSetting || isGoalSeek ? " cursor-pointer" : ""
+                }`}
+                onClick={
+                  isRecommended ? onRecommendBudgetClick
+                  : isGoalSetting ? onGoalSettingClick
+                  : isGoalSeek ? onGoalSeekClick
+                  : undefined
+                }
               >
                 <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-600 rounded-2xl mb-6">
                   <Icon className="w-10 h-10 text-white" />

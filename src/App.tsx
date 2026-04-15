@@ -17,8 +17,10 @@ import { SignUpPage } from "./components/SignUpPage";
 import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
 import { RecommendBudgetPage } from "./components/RecommendBudgetPage";
 import { AdminPage } from "./components/AdminPage";
+import { GoalSetPage } from "./components/GoalSetPage";
+import { GoalBudget } from "./components/GoalBudget";
 
-type PageView = "landing" | "template" | "manageTemplate" | "login" | "account" | "dashboard" | "recommendBudget" | "about" | "contact" | "signup" | "forgotPassword" | "features" | "admin";
+type PageView = "landing" | "template" | "manageTemplate" | "login" | "account" | "dashboard" | "recommendBudget" | "about" | "contact" | "signup" | "forgotPassword" | "features" | "admin" | "goalSet" | "goalBudget";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<PageView>("landing");
@@ -272,7 +274,59 @@ export default function App() {
           username={username}
           onAdminClick={() => setCurrentPage("admin")}
         />
-        <FeaturesPage onRecommendBudgetClick={() => setCurrentPage("recommendBudget")} />
+        <FeaturesPage onRecommendBudgetClick={() => setCurrentPage("recommendBudget")} onGoalSettingClick={() => setCurrentPage("goalSet")} onGoalSeekClick={() => setCurrentPage("goalBudget")} />
+        <Footer
+          onAboutClick={() => setCurrentPage("about")}
+          onContactClick={() => setCurrentPage("contact")}
+        />
+      </div>
+    );
+  }
+
+  if (currentPage === "goalSet") {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header
+          onLoginClick={() => setCurrentPage("login")}
+          onSignUpClick={() => setCurrentPage("signup")}
+          onHomeClick={() => setCurrentPage("landing")}
+          onTemplatesClick={() => setCurrentPage("manageTemplate")}
+          onAccountClick={() => setCurrentPage("account")}
+          onDashboardClick={() => setCurrentPage("dashboard")}
+          onAboutClick={() => setCurrentPage("about")}
+          onContactClick={() => setCurrentPage("contact")}
+          onFeaturesClick={() => setCurrentPage("features")}
+          isLoggedIn={isLoggedIn}
+          username={username}
+          onAdminClick={() => setCurrentPage("admin")}
+        />
+        <GoalSetPage onGoalSaved={() => { setCurrentPage("goalBudget"); window.scrollTo(0, 0); }} />
+        <Footer
+          onAboutClick={() => setCurrentPage("about")}
+          onContactClick={() => setCurrentPage("contact")}
+        />
+      </div>
+    );
+  }
+
+  if (currentPage === "goalBudget") {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header
+          onLoginClick={() => setCurrentPage("login")}
+          onSignUpClick={() => setCurrentPage("signup")}
+          onHomeClick={() => setCurrentPage("landing")}
+          onTemplatesClick={() => setCurrentPage("manageTemplate")}
+          onAccountClick={() => setCurrentPage("account")}
+          onDashboardClick={() => setCurrentPage("dashboard")}
+          onAboutClick={() => setCurrentPage("about")}
+          onContactClick={() => setCurrentPage("contact")}
+          onFeaturesClick={() => setCurrentPage("features")}
+          isLoggedIn={isLoggedIn}
+          username={username}
+          onAdminClick={() => setCurrentPage("admin")}
+        />
+        <GoalBudget onCreateBudget={() => setCurrentPage("template")} />
         <Footer
           onAboutClick={() => setCurrentPage("about")}
           onContactClick={() => setCurrentPage("contact")}
