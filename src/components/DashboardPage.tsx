@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
-import { TrendingUp, TrendingDown, DollarSign, CreditCard, PiggyBank, Target, Heart } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, CreditCard, PiggyBank, Target, Heart, ChevronDown, ChevronUp } from "lucide-react";
 
 /* API URL */
 const API_URL = import.meta.env.VITE_API_URL;
@@ -47,18 +47,18 @@ interface DebtRow {
 }
 
 const chartColors = [
-  "bg-blue-500",
-  "bg-green-500",
-  "bg-yellow-500",
-  "bg-purple-500",
-  "bg-orange-500",
-  "bg-red-500",
-  "bg-cyan-500",
-  "bg-pink-500",
-  "bg-indigo-500",
-  "bg-lime-500",
-  "bg-amber-500",
-  "bg-gray-500",
+  "#3b82f6",
+  "#22c55e",
+  "#eab308",
+  "#a855f7",
+  "#f97316",
+  "#ef4444",
+  "#06b6d4",
+  "#ec4899",
+  "#6366f1",
+  "#84cc16",
+  "#f59e0b",
+  "#6b7280",
 ];
 
 const roundToCents = (value: number): number => Math.round(value * 100) / 100;
@@ -81,6 +81,20 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
   const [monthlyDonationsTotal, setMonthlyDonationsTotal] = useState(0);
   const [savingsAccountsTotal, setSavingsAccountsTotal] = useState(0);
   const [investingAccountsTotal, setInvestingAccountsTotal] = useState(0);
+  const [savings501Total, setSavings501Total] = useState(0);
+  const [investing601Total, setInvesting601Total] = useState(0);
+  const [donationRows, setDonationRows] = useState<DebtRow[]>([]);
+  const [savingsRows, setSavingsRows] = useState<DebtRow[]>([]);
+  const [investingRows, setInvestingRows] = useState<DebtRow[]>([]);
+  const [savings501Rows, setSavings501Rows] = useState<DebtRow[]>([]);
+  const [investing601Rows, setInvesting601Rows] = useState<DebtRow[]>([]);
+  const [expandDebt, setExpandDebt] = useState(false);
+  const [expandDonations, setExpandDonations] = useState(false);
+  const [expandSavings, setExpandSavings] = useState(false);
+  const [expandInvesting, setExpandInvesting] = useState(false);
+  const [expandSavings501, setExpandSavings501] = useState(false);
+  const [expandInvesting601, setExpandInvesting601] = useState(false);
+  const [viewAllSpending, setViewAllSpending] = useState(false);
   const [syncError, setSyncError] = useState("");
 
   const fetchJson = async <T,>(endpoint: string): Promise<T | null> => {
@@ -196,9 +210,16 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
 
     const expenseByName = new Map<string, number>();
     const debtByName = new Map<string, number>();
+    const donationByName = new Map<string, number>();
+    const savingsByName = new Map<string, number>();
+    const investingByName = new Map<string, number>();
+    const savings501ByName = new Map<string, number>();
+    const investing601ByName = new Map<string, number>();
     let donationsTotal = 0;
     let savingsTotal = 0;
     let investingTotal = 0;
+    let savings501 = 0;
+    let investing601 = 0;
 
     for (const item of selectedItems) {
       const itemCategoryId = Number(item.category_id);
@@ -226,19 +247,32 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
 
       const isDonation = itemCategoryId >= 400 && itemCategoryId < 500;
       if (isDonation) {
+        donationByName.set(rowName, roundToCents((donationByName.get(rowName) ?? 0) + plannedAmount));
         donationsTotal = roundToCents(donationsTotal + plannedAmount);
         continue;
       }
 
       const isSavings = type ? type === "savings" : itemCategoryId >= 500 && itemCategoryId < 600;
       if (isSavings) {
-        savingsTotal = roundToCents(savingsTotal + plannedAmount);
+        if (itemCategoryId === 501) {
+          savings501 = roundToCents(savings501 + plannedAmount);
+          savings501ByName.set(rowName, roundToCents((savings501ByName.get(rowName) ?? 0) + plannedAmount));
+        } else {
+          savingsTotal = roundToCents(savingsTotal + plannedAmount);
+          savingsByName.set(rowName, roundToCents((savingsByName.get(rowName) ?? 0) + plannedAmount));
+        }
         continue;
       }
 
       const isInvesting = type ? type === "investments" : itemCategoryId >= 600 && itemCategoryId < 700;
       if (isInvesting) {
-        investingTotal = roundToCents(investingTotal + plannedAmount);
+        if (itemCategoryId === 601) {
+          investing601 = roundToCents(investing601 + plannedAmount);
+          investing601ByName.set(rowName, roundToCents((investing601ByName.get(rowName) ?? 0) + plannedAmount));
+        } else {
+          investingTotal = roundToCents(investingTotal + plannedAmount);
+          investingByName.set(rowName, roundToCents((investingByName.get(rowName) ?? 0) + plannedAmount));
+        }
       }
     }
 
@@ -262,6 +296,13 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
     setMonthlyDonationsTotal(donationsTotal);
     setSavingsAccountsTotal(savingsTotal);
     setInvestingAccountsTotal(investingTotal);
+    setSavings501Total(savings501);
+    setInvesting601Total(investing601);
+    setDonationRows(Array.from(donationByName.entries()).map(([name, amount]) => ({ name, amount })));
+    setSavingsRows(Array.from(savingsByName.entries()).map(([name, amount]) => ({ name, amount })));
+    setInvestingRows(Array.from(investingByName.entries()).map(([name, amount]) => ({ name, amount })));
+    setSavings501Rows(Array.from(savings501ByName.entries()).map(([name, amount]) => ({ name, amount })));
+    setInvesting601Rows(Array.from(investing601ByName.entries()).map(([name, amount]) => ({ name, amount })));
   };
 
   const handleTemplateSync = async () => {
@@ -293,8 +334,17 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
 
   const categories = expenseRows.map((expense) => ({
     ...expense,
+    label: "Expense",
     budget: incomeTotal,
   }));
+
+  const allSpendingCategories = [
+    ...expenseRows.map((r, i) => ({ name: r.name, amount: r.amount, color: chartColors[i % chartColors.length], label: "Expense" })),
+    ...debtRows.map((r) => ({ name: r.name, amount: r.amount, color: "#f87171", label: "Debt" })),
+    ...donationRows.map((r) => ({ name: r.name, amount: r.amount, color: "#f472b6", label: "Donation" })),
+    ...savingsRows.map((r) => ({ name: r.name, amount: r.amount, color: "#4ade80", label: "Savings" })),
+    ...investingRows.map((r) => ({ name: r.name, amount: r.amount, color: "#60a5fa", label: "Investing" })),
+  ].sort((a, b) => b.amount - a.amount);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -315,10 +365,7 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
             <div className="text-2xl text-gray-900">
               ${budgetSummary.totalIncome.toLocaleString()}
             </div>
-            <div className="flex items-center gap-1 mt-2 text-sm text-green-600">
-              <TrendingUp size={16} />
-              <span>+12% from last month</span>
-            </div>
+            
           </Card>
 
           <Card className="p-6">
@@ -329,10 +376,7 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
             <div className="text-2xl text-gray-900">
               ${budgetSummary.totalExpenses.toLocaleString()}
             </div>
-            <div className="flex items-center gap-1 mt-2 text-sm text-red-600">
-              <TrendingDown size={16} />
-              <span>-5% from last month</span>
-            </div>
+            
           </Card>
 
           <Card className="p-6">
@@ -343,9 +387,7 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
             <div className="text-2xl text-gray-900">
               ${budgetSummary.remaining.toLocaleString()}
             </div>
-            <div className="text-sm text-gray-600 mt-2">
-              35% of monthly income
-            </div>
+            
           </Card>
 
           <Card className="p-6">
@@ -369,22 +411,29 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
           <Card className="lg:col-span-2 p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl text-gray-900">Spending by Category</h2>
-              <Button variant="outline" size="sm">View All</Button>
+              <Button variant="outline" size="sm" onClick={() => setViewAllSpending(!viewAllSpending)}>
+                {viewAllSpending ? "Show Less" : "View All"}
+              </Button>
             </div>
 
             <div className="space-y-4">
-              {categories.map((category) => (
-                <div key={category.name}>
+              {(viewAllSpending ? allSpendingCategories : categories.slice(0, 5)).map((category) => (
+                <div key={`${category.name}-${category.label}`}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-700">{category.name}</span>
+                    <span className="text-sm text-gray-700">
+                      {category.name}
+                      {viewAllSpending && (
+                        <span className="ml-2 text-xs text-gray-400">({category.label})</span>
+                      )}
+                    </span>
                     <span className="text-sm text-gray-900">
-                      ${category.amount} / ${category.budget}
+                      ${category.amount} / ${incomeTotal.toLocaleString()}
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
-                      className={`${category.color} h-2 rounded-full transition-all`}
-                      style={{ width: `${(category.amount / category.budget) * 100}%` }}
+                      className="h-2 rounded-full transition-all"
+                      style={{ width: incomeTotal > 0 ? `${Math.min((category.amount / incomeTotal) * 100, 100)}%` : "0%", backgroundColor: category.color }}
                     />
                   </div>
                 </div>
@@ -446,6 +495,24 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
               <TrendingDown size={16} />
               <span>Current monthly debt load</span>
             </div>
+            <button
+              onClick={() => setExpandDebt(!expandDebt)}
+              className="flex items-center gap-1 mt-3 text-xs text-gray-500 hover:text-gray-700"
+            >
+              {expandDebt ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {expandDebt ? "Hide" : "Show"} details
+            </button>
+            {expandDebt && (
+              <div className="mt-2 space-y-1 border-t pt-2">
+                {debtRows.map((item) => (
+                  <div key={item.name} className="flex justify-between text-xs text-gray-600">
+                    <span>{item.name}</span>
+                    <span>${item.amount.toLocaleString()}</span>
+                  </div>
+                ))}
+                {debtRows.length === 0 && <p className="text-xs text-gray-400">No items</p>}
+              </div>
+            )}
           </Card>
 
           <Card className="p-6">
@@ -460,11 +527,29 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
               <TrendingUp size={16} />
               <span>Giving planned this month</span>
             </div>
+            <button
+              onClick={() => setExpandDonations(!expandDonations)}
+              className="flex items-center gap-1 mt-3 text-xs text-gray-500 hover:text-gray-700"
+            >
+              {expandDonations ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {expandDonations ? "Hide" : "Show"} details
+            </button>
+            {expandDonations && (
+              <div className="mt-2 space-y-1 border-t pt-2">
+                {donationRows.map((item) => (
+                  <div key={item.name} className="flex justify-between text-xs text-gray-600">
+                    <span>{item.name}</span>
+                    <span>${item.amount.toLocaleString()}</span>
+                  </div>
+                ))}
+                {donationRows.length === 0 && <p className="text-xs text-gray-400">No items</p>}
+              </div>
+            )}
           </Card>
 
           <Card className="p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Savings Accounts</span>
+              <span className="text-sm text-gray-600">Monthly Savings</span>
               <PiggyBank className="w-5 h-5 text-green-600" />
             </div>
             <div className="text-2xl text-gray-900">
@@ -474,11 +559,29 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
               <TrendingUp size={16} />
               <span>Total monthly savings</span>
             </div>
+            <button
+              onClick={() => setExpandSavings(!expandSavings)}
+              className="flex items-center gap-1 mt-3 text-xs text-gray-500 hover:text-gray-700"
+            >
+              {expandSavings ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {expandSavings ? "Hide" : "Show"} details
+            </button>
+            {expandSavings && (
+              <div className="mt-2 space-y-1 border-t pt-2">
+                {savingsRows.map((item) => (
+                  <div key={item.name} className="flex justify-between text-xs text-gray-600">
+                    <span>{item.name}</span>
+                    <span>${item.amount.toLocaleString()}</span>
+                  </div>
+                ))}
+                {savingsRows.length === 0 && <p className="text-xs text-gray-400">No items</p>}
+              </div>
+            )}
           </Card>
 
           <Card className="p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Investing Accounts</span>
+              <span className="text-sm text-gray-600">Monthly Investing</span>
               <DollarSign className="w-5 h-5 text-blue-600" />
             </div>
             <div className="text-2xl text-gray-900">
@@ -488,6 +591,91 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
               <TrendingUp size={16} />
               <span>Total monthly investing</span>
             </div>
+            <button
+              onClick={() => setExpandInvesting(!expandInvesting)}
+              className="flex items-center gap-1 mt-3 text-xs text-gray-500 hover:text-gray-700"
+            >
+              {expandInvesting ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {expandInvesting ? "Hide" : "Show"} details
+            </button>
+            {expandInvesting && (
+              <div className="mt-2 space-y-1 border-t pt-2">
+                {investingRows.map((item) => (
+                  <div key={item.name} className="flex justify-between text-xs text-gray-600">
+                    <span>{item.name}</span>
+                    <span>${item.amount.toLocaleString()}</span>
+                  </div>
+                ))}
+                {investingRows.length === 0 && <p className="text-xs text-gray-400">No items</p>}
+              </div>
+            )}
+          </Card>
+        </div>
+
+        {/* Wide Savings & Investing Cards */}
+        <div className="grid md:grid-cols-2 gap-6 mt-8">
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl text-gray-900">Savings Accounts</h2>
+              <PiggyBank className="w-6 h-6 text-green-600" />
+            </div>
+            <div className="text-3xl text-gray-900 mb-2">
+              ${savings501Total.toLocaleString()}
+            </div>
+            <div className="flex items-center gap-1 text-sm text-green-600">
+              <TrendingUp size={16} />
+              <span>Total balance across savings accounts</span>
+            </div>
+            <button
+              onClick={() => setExpandSavings501(!expandSavings501)}
+              className="flex items-center gap-1 mt-3 text-xs text-gray-500 hover:text-gray-700"
+            >
+              {expandSavings501 ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {expandSavings501 ? "Hide" : "Show"} details
+            </button>
+            {expandSavings501 && (
+              <div className="mt-2 space-y-1 border-t pt-2">
+                {savings501Rows.map((item) => (
+                  <div key={item.name} className="flex justify-between text-sm text-gray-600">
+                    <span>{item.name}</span>
+                    <span>${item.amount.toLocaleString()}</span>
+                  </div>
+                ))}
+                {savings501Rows.length === 0 && <p className="text-sm text-gray-400">No items</p>}
+              </div>
+            )}
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl text-gray-900">Investing Accounts</h2>
+              <TrendingUp className="w-6 h-6 text-blue-600" />
+            </div>
+            <div className="text-3xl text-gray-900 mb-2">
+              ${investing601Total.toLocaleString()}
+            </div>
+            <div className="flex items-center gap-1 text-sm text-blue-600">
+              <TrendingUp size={16} />
+              <span>Total balance across investing accounts</span>
+            </div>
+            <button
+              onClick={() => setExpandInvesting601(!expandInvesting601)}
+              className="flex items-center gap-1 mt-3 text-xs text-gray-500 hover:text-gray-700"
+            >
+              {expandInvesting601 ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {expandInvesting601 ? "Hide" : "Show"} details
+            </button>
+            {expandInvesting601 && (
+              <div className="mt-2 space-y-1 border-t pt-2">
+                {investing601Rows.map((item) => (
+                  <div key={item.name} className="flex justify-between text-sm text-gray-600">
+                    <span>{item.name}</span>
+                    <span>${item.amount.toLocaleString()}</span>
+                  </div>
+                ))}
+                {investing601Rows.length === 0 && <p className="text-sm text-gray-400">No items</p>}
+              </div>
+            )}
           </Card>
         </div>
 

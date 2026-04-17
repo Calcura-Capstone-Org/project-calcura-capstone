@@ -1,5 +1,5 @@
 // imported from vite library
-  import { defineConfig } from 'vite';
+  import { defineConfig } from 'vitest/config';
   import react from '@vitejs/plugin-react-swc';
   import path from 'path';
 
@@ -49,6 +49,11 @@
         '@radix-ui/react-accordion@1.2.3': '@radix-ui/react-accordion',
         '@': path.resolve(__dirname, './src'),
       },
+    },
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: './src/test/setup.ts',
     },
     build: {
       target: 'esnext',
