@@ -22,6 +22,9 @@ interface GoalOption {
   target_amount: number;
   target_date?: string;
   goal_type?: string;
+  apr?: number;
+  down_payment?: number;
+  interest?: number;
 }
 
 interface CategoryApi {
@@ -167,6 +170,9 @@ export function GoalBudget({ onCreateBudget }: GoalBudgetProps) {
             target_amount: Number(g.target_amount),
             target_date: g.target_date ?? undefined,
             goal_type: g.goal_type ?? undefined,
+            apr: g.apr != null ? Number(g.apr) : undefined,
+            down_payment: g.down_payment != null ? Number(g.down_payment) : undefined,
+            interest: g.interest != null ? Number(g.interest) : undefined,
           }));
         setUserGoals(ownGoals);
         if (ownGoals.length > 0) {
@@ -338,16 +344,52 @@ export function GoalBudget({ onCreateBudget }: GoalBudgetProps) {
     const goal = userGoals.find((g) => String(g.id) === selectedGoal);
     if (!goal?.target_date) return null;
     const today = new Date();
+    const startOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
     const target = new Date(goal.target_date);
-    const diffMs = target.getTime() - today.getTime();
+    const diffMs = target.getTime() - startOfNextMonth.getTime();
     const months = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 30.4375)));
     return months > 0 ? months : null;
+  })();
+
+  const mortgageMonthlyPayment = (() => {
+    if (!selectedGoal) return null;
+    const goal = userGoals.find((g) => String(g.id) === selectedGoal);
+    if (!goal || goal.goal_type?.toLowerCase() !== "mortgage") return null;
+    if (!goalMonthsRemaining || goalMonthsRemaining <= 0) return null;
+    const principal = goal.target_amount - (goal.down_payment ?? 0);
+    if (principal <= 0) return null;
+    const annualRate = goal.interest ?? 0;
+    if (annualRate <= 0) {
+      // No interest: straight division
+      return roundToCents(principal / goalMonthsRemaining);
+    }
+    const r = annualRate / 12;
+    const n = goalMonthsRemaining;
+    return roundToCents((principal * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1));
+  })();
+
+  const aprMonthlyPayment = (() => {
+    if (!selectedGoal) return null;
+    const goal = userGoals.find((g) => String(g.id) === selectedGoal);
+    if (!goal || goal.goal_type?.toLowerCase() !== "apr") return null;
+    if (!goalMonthsRemaining || goalMonthsRemaining <= 0) return null;
+    const fv = goal.target_amount;
+    if (fv <= 0) return null;
+    const annualRate = goal.apr ?? 0;
+    if (annualRate <= 0) {
+      return roundToCents(fv / goalMonthsRemaining);
+    }
+    const r = annualRate / 12;
+    const n = goalMonthsRemaining;
+    return roundToCents((fv * r) / (Math.pow(1 + r, n) - 1));
   })();
 
   const goalDeduction = (() => {
     if (!selectedGoal || goalMonthsRemaining === null) return 0;
     const goal = userGoals.find((g) => String(g.id) === selectedGoal);
     if (!goal) return 0;
+    if (mortgageMonthlyPayment !== null) return mortgageMonthlyPayment;
+    if (aprMonthlyPayment !== null) return aprMonthlyPayment;
     return roundToCents(goal.target_amount / goalMonthsRemaining);
   })();
 
@@ -560,15 +602,45 @@ export function GoalBudget({ onCreateBudget }: GoalBudgetProps) {
                   )}
                   {goalDeduction > 0 && (
                     <div className="rounded-lg border bg-white p-4">
-                      <p className="text-xs text-gray-500">Monthly Savings</p>
+                      <p className="text-xs text-gray-500">
+                        {mortgageMonthlyPayment !== null ? "Monthly Mortgage Payment" : aprMonthlyPayment !== null ? "Monthly APR Payment" : "Monthly Savings"}
+                      </p>
                       <p className="text-xl text-gray-900 mt-1">
                         ${goalDeduction.toLocaleString()}
                       </p>
                     </div>
                   )}
+                  {mortgageMonthlyPayment !== null && goal.down_payment != null && (
+                    <div className="rounded-lg border bg-white p-4">
+                      <p className="text-xs text-gray-500">Down Payment</p>
+                      <p className="text-xl text-gray-900 mt-1">${goal.down_payment.toLocaleString()}</p>
+                    </div>
+                  )}
+                  {mortgageMonthlyPayment !== null && goal.apr != null && (
+                    <div className="rounded-lg border bg-white p-4">
+                      <p className="text-xs text-gray-500">APR</p>
+                      <p className="text-xl text-gray-900 mt-1">{goal.apr}%</p>
+                    </div>
+                  )}
+                  {mortgageMonthlyPayment !== null && goal.interest != null && (
+                    <div className="rounded-lg border bg-white p-4">
+                      <p className="text-xs text-gray-500">Interest Rate</p>
+                      <p className="text-xl text-gray-900 mt-1">{(goal.interest * 100).toFixed(2)}%</p>
+                    </div>
+                  )}
+                  {aprMonthlyPayment !== null && goal.apr != null && (
+                    <div className="rounded-lg border bg-white p-4">
+                      <p className="text-xs text-gray-500">APR</p>
+                      <p className="text-xl text-gray-900 mt-1">{(goal.apr * 100).toFixed(2)}%</p>
+                    </div>
+                  )}
                 </div>
                 <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
-                  {goalDeduction > 0
+                  {goalDeduction > 0 && mortgageMonthlyPayment !== null
+                    ? `Based on a loan of $${(goal.target_amount - (goal.down_payment ?? 0)).toLocaleString()} at ${((goal.interest ?? 0) * 100).toFixed(2)}% interest over ${goalMonthsRemaining} months, your estimated monthly mortgage payment is $${mortgageMonthlyPayment.toLocaleString()}.`
+                    : goalDeduction > 0 && aprMonthlyPayment !== null
+                    ? `To accumulate $${goal.target_amount.toLocaleString()} at ${((goal.apr ?? 0) * 100).toFixed(2)}% APR over ${goalMonthsRemaining} months, you need to save $${aprMonthlyPayment.toLocaleString()} per month.`
+                    : goalDeduction > 0
                     ? `To reach your goal of $${goal.target_amount.toLocaleString()} by ${goal.target_date}, you need to save $${goalDeduction.toLocaleString()} per month.`
                     : `No target date set for this goal. Add a target date to calculate your required monthly savings.`}
                 </div>

@@ -93,6 +93,9 @@ def delete_user(user_id: int):
     # Delete all templates owned by this user
     conn.execute("DELETE FROM templates WHERE user_id = ?", (user_id,))
 
+    # Delete all goals owned by this user
+    conn.execute("DELETE FROM goals WHERE user_id = ?", (user_id,))
+
     # Delete the user
     conn.execute("DELETE FROM Users WHERE user_id = ?", (user_id,))
 

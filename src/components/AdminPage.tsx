@@ -13,10 +13,9 @@ import { toast } from "sonner@2.0.3";
 
 interface User {
   id: string;
-  name: string;
+  name: string | null;
   email: string;
-  accountType: "Youth" | "Career" | "Retirement";
-  createdAt: string;
+  created_on: string;
   isAdmin: boolean;
 }
 
@@ -37,23 +36,27 @@ interface SiteImage {
 export function AdminPage() {
   const [totalUsers, setTotalUsers] = useState<number | null>(null);
 
+  // User Management State
+  const [users, setUsers] = useState<User[]>([]);
+
   useEffect(() => {
     fetch(`${API_URL}/users`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch users");
         return res.json();
       })
-      .then((data: unknown[]) => setTotalUsers(data.length))
+      .then((data: Array<{ user_id: number | null; name: string | null; email: string; created_on: string }>) => {
+        setTotalUsers(data.length);
+        setUsers(data.map((u) => ({
+          id: u.user_id != null ? String(u.user_id) : u.email,
+          name: u.name,
+          email: u.email,
+          created_on: u.created_on,
+          isAdmin: false,
+        })));
+      })
       .catch(() => setTotalUsers(null));
   }, []);
-
-  // User Management State
-  const [users, setUsers] = useState<User[]>([
-    { id: "1", name: "John Doe", email: "john@example.com", accountType: "Career", createdAt: "2024-03-15", isAdmin: false },
-    { id: "2", name: "Jane Smith", email: "jane@example.com", accountType: "Youth", createdAt: "2024-03-20", isAdmin: false },
-    { id: "3", name: "Admin User", email: "admin@calcura.com", accountType: "Career", createdAt: "2024-01-01", isAdmin: true },
-    { id: "4", name: "Bob Johnson", email: "bob@example.com", accountType: "Retirement", createdAt: "2024-03-25", isAdmin: false },
-  ]);
 
   // Content Management State
   const [pageContent, setPageContent] = useState<PageContent>({
@@ -94,8 +97,7 @@ export function AdminPage() {
       id: Date.now().toString(),
       name: newUserName,
       email: newUserEmail,
-      accountType: newUserAccountType,
-      createdAt: new Date().toISOString().split('T')[0],
+      created_on: new Date().toISOString().replace('T', ' ').split('.')[0],
       isAdmin: false
     };
 
@@ -110,7 +112,7 @@ export function AdminPage() {
     setIsCreateUserOpen(false);
   };
 
-  const handleDeleteUser = (userId: string) => {
+  const handleDeleteUser = async (userId: string) => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
 
@@ -119,10 +121,16 @@ export function AdminPage() {
       return;
     }
 
-    const confirmed = window.confirm(`Are you sure you want to delete ${user.name}'s account? This action cannot be undone.`);
-    if (confirmed) {
+    const confirmed = window.confirm(`Are you sure you want to delete ${user.name ?? user.email}'s account? This action cannot be undone.`);
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`${API_URL}/users/${userId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Delete failed");
       setUsers(users.filter(u => u.id !== userId));
-      toast.success(`${user.name}'s account has been deleted`);
+      toast.success(`${user.name ?? user.email}'s account has been deleted`);
+    } catch {
+      toast.error("Failed to delete account. Please try again.");
     }
   };
 
@@ -198,31 +206,31 @@ export function AdminPage() {
 
           <Card className="p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Youth Accounts</span>
+              <span className="text-sm text-gray-600">Named Accounts</span>
               <Users className="w-5 h-5 text-green-600" />
             </div>
             <div className="text-2xl text-gray-900">
-              {users.filter(u => u.accountType === "Youth").length}
+              {users.filter(u => u.name).length}
             </div>
           </Card>
 
           <Card className="p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Career Accounts</span>
+              <span className="text-sm text-gray-600">Admin Accounts</span>
               <Users className="w-5 h-5 text-purple-600" />
             </div>
             <div className="text-2xl text-gray-900">
-              {users.filter(u => u.accountType === "Career").length}
+              {users.filter(u => u.isAdmin).length}
             </div>
           </Card>
 
           <Card className="p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Retirement Accounts</span>
+              <span className="text-sm text-gray-600">Regular Accounts</span>
               <Users className="w-5 h-5 text-orange-600" />
             </div>
             <div className="text-2xl text-gray-900">
-              {users.filter(u => u.accountType === "Retirement").length}
+              {users.filter(u => !u.isAdmin).length}
             </div>
           </Card>
         </div>
@@ -268,7 +276,7 @@ export function AdminPage() {
                     <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-medium text-gray-900">{user.name}</h3>
+                          <h3 className="font-medium text-gray-900">{user.name ?? "(no name)"}</h3>
                           {user.isAdmin && (
                             <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">
                               Admin
@@ -278,10 +286,7 @@ export function AdminPage() {
                         <p className="text-sm text-gray-600">{user.email}</p>
                         <div className="flex items-center gap-4 mt-1">
                           <span className="text-xs text-gray-500">
-                            Account Type: <span className="font-medium">{user.accountType}</span>
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            Created: {user.createdAt}
+                            Created: {user.created_on}
                           </span>
                         </div>
                       </div>
