@@ -1,6 +1,7 @@
 /* Jaren Schenider wrote all 46 lines of code for this file.*/
 import { Card } from "./ui/card";
-import { BarChart3, Calendar, Search } from "lucide-react";
+import { BarChart3, Calendar, Search, Lightbulb, Target, Zap } from "lucide-react";
+import { useState, useEffect } from "react";
 
 /* API URL */
 const API_URL = import.meta.env.VITE_API_URL;
@@ -8,23 +9,22 @@ const API_URL = import.meta.env.VITE_API_URL;
 //remove later
 console.log("API_URL =", API_URL);
 
-const features = [
-  {
-    icon: BarChart3,
-    title: "Recommended Budget",
-    description: "Get a recommended budget using your own information and tested financial principles"
-  },
-  {
-    icon: Calendar,
-    title: "Goal Setting",
-    description: "Set a financial goal and we will calculate what you need to do to achieve it"
-  },
-  {
-    icon: Search,
-    title: "Goal Seek Budgeting",
-    description: "Get a budget recommendation to achieve a specific financial goal"
-  }
-];
+// Icon mapping
+const iconMap: { [key: string]: React.ComponentType<any> } = {
+  BarChart3,
+  Calendar,
+  Search,
+  Lightbulb,
+  Target,
+  Zap,
+};
+
+interface Feature {
+  feature_id: string;
+  title: string;
+  description: string;
+  icon: string;
+}
 
 interface FeaturesSectionProps {
   onRecommendBudgetClick?: () => void;
@@ -33,6 +33,36 @@ interface FeaturesSectionProps {
 }
 
 export function FeaturesSection({ onRecommendBudgetClick, onGoalSettingClick, onGoalSeekClick }: FeaturesSectionProps) {
+  const [features, setFeatures] = useState<Feature[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API_URL}/content/features`)
+      .then((res) => res.json())
+      .then((data) => {
+        setFeatures(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <section id="features" className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="text-gray-900 mb-12">Features</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="p-8 bg-gray-100 rounded-lg animate-pulse h-64"></div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section id="features" className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-6">
@@ -40,13 +70,13 @@ export function FeaturesSection({ onRecommendBudgetClick, onGoalSettingClick, on
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {features.map((feature) => {
-            const Icon = feature.icon;
+            const Icon = iconMap[feature.icon] || BarChart3;
             const isRecommended = feature.title === "Recommended Budget";
             const isGoalSetting = feature.title === "Goal Setting";
             const isGoalSeek = feature.title === "Goal Seek Budgeting";
             return (
               <Card
-                key={feature.title}
+                key={feature.feature_id}
                 className={`p-8 text-center hover:shadow-lg transition-shadow${
                   isRecommended || isGoalSetting || isGoalSeek ? " cursor-pointer" : ""
                 }`}

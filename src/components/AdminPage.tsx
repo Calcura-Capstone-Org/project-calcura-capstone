@@ -33,12 +33,57 @@ interface SiteImage {
   url: string;
 }
 
+interface Feature {
+  feature_id: string;
+  title: string;
+  description: string;
+  icon: string;
+}
+
+interface TemplateDescription {
+  id: string;
+  stage_id: number;
+  stage_name: string;
+  description: string;
+}
+
 export function AdminPage() {
+  // All State Declarations First
   const [totalUsers, setTotalUsers] = useState<number | null>(null);
-
-  // User Management State
   const [users, setUsers] = useState<User[]>([]);
+  const [features, setFeatures] = useState<Feature[]>([]);
+  const [templates, setTemplates] = useState<TemplateDescription[]>([]);
 
+  const [pageContent, setPageContent] = useState<PageContent>({
+    heroTitle: "Take Control of Your Financial Future",
+    heroSubtitle: "AI-powered budgeting that adapts to your life stage",
+    aboutText: "Calcura is a comprehensive financial planning tool designed to help you achieve your financial goals.",
+    featuresTitle: "Smart Features for Smart Budgeting"
+  });
+
+  const [siteImages, setSiteImages] = useState<SiteImage[]>([
+    { id: "1", name: "Hero Background", location: "Landing Page - Hero Section", url: "https://images.unsplash.com/photo-1554224155-6726b3ff858f" },
+    { id: "2", name: "Feature Image 1", location: "Features Section", url: "https://images.unsplash.com/photo-1460925895917-afdab827c52f" },
+    { id: "3", name: "Dashboard Preview", location: "Dashboard Page", url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71" },
+  ]);
+
+  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
+  const [isEditContentOpen, setIsEditContentOpen] = useState(false);
+  const [isEditImageOpen, setIsEditImageOpen] = useState(false);
+  const [isEditFeatureOpen, setIsEditFeatureOpen] = useState(false);
+  const [isEditTemplateOpen, setIsEditTemplateOpen] = useState(false);
+
+  const [editingContent, setEditingContent] = useState<PageContent>(pageContent);
+  const [editingImage, setEditingImage] = useState<SiteImage | null>(null);
+  const [editingFeature, setEditingFeature] = useState<Feature | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<TemplateDescription | null>(null);
+
+  const [newUserName, setNewUserName] = useState("");
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
+  const [newUserAccountType, setNewUserAccountType] = useState<"Youth" | "Career" | "Retirement">("Career");
+
+  // Effects
   useEffect(() => {
     fetch(`${API_URL}/users`)
       .then((res) => {
@@ -56,35 +101,31 @@ export function AdminPage() {
         })));
       })
       .catch(() => setTotalUsers(null));
+
+    fetch(`${API_URL}/content/page-content`)
+      .then((res) => res.json())
+      .then((data) => {
+        const formattedData = {
+          heroTitle: data.hero_title,
+          heroSubtitle: data.hero_subtitle,
+          aboutText: data.about_text,
+          featuresTitle: data.features_title,
+        };
+        setPageContent(formattedData);
+        setEditingContent(formattedData);
+      })
+      .catch(() => toast.error("Failed to load page content"));
+
+    fetch(`${API_URL}/content/features`)
+      .then((res) => res.json())
+      .then((data) => setFeatures(data))
+      .catch(() => toast.error("Failed to load features"));
+
+    fetch(`${API_URL}/content/templates`)
+      .then((res) => res.json())
+      .then((data) => setTemplates(data))
+      .catch(() => toast.error("Failed to load templates"));
   }, []);
-
-  // Content Management State
-  const [pageContent, setPageContent] = useState<PageContent>({
-    heroTitle: "Take Control of Your Financial Future",
-    heroSubtitle: "AI-powered budgeting that adapts to your life stage",
-    aboutText: "Calcura is a comprehensive financial planning tool designed to help you achieve your financial goals.",
-    featuresTitle: "Smart Features for Smart Budgeting"
-  });
-
-  // Image Management State
-  const [siteImages, setSiteImages] = useState<SiteImage[]>([
-    { id: "1", name: "Hero Background", location: "Landing Page - Hero Section", url: "https://images.unsplash.com/photo-1554224155-6726b3ff858f" },
-    { id: "2", name: "Feature Image 1", location: "Features Section", url: "https://images.unsplash.com/photo-1460925895917-afdab827c52f" },
-    { id: "3", name: "Dashboard Preview", location: "Dashboard Page", url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71" },
-  ]);
-
-  // Dialog States
-  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
-  const [isEditContentOpen, setIsEditContentOpen] = useState(false);
-  const [isEditImageOpen, setIsEditImageOpen] = useState(false);
-  const [editingContent, setEditingContent] = useState<PageContent>(pageContent);
-  const [editingImage, setEditingImage] = useState<SiteImage | null>(null);
-
-  // Form States for New User
-  const [newUserName, setNewUserName] = useState("");
-  const [newUserEmail, setNewUserEmail] = useState("");
-  const [newUserPassword, setNewUserPassword] = useState("");
-  const [newUserAccountType, setNewUserAccountType] = useState<"Youth" | "Career" | "Retirement">("Career");
 
   // User Management Functions
   const handleCreateUser = () => {
@@ -143,10 +184,27 @@ export function AdminPage() {
   };
 
   // Content Management Functions
-  const handleSaveContent = () => {
-    setPageContent(editingContent);
-    toast.success("Page content updated successfully");
-    setIsEditContentOpen(false);
+  const handleSaveContent = async () => {
+    try {
+      const res = await fetch(`${API_URL}/content/page-content`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          hero_title: editingContent.heroTitle,
+          hero_subtitle: editingContent.heroSubtitle,
+          about_text: editingContent.aboutText,
+          features_title: editingContent.featuresTitle,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to update content");
+      
+      setPageContent(editingContent);
+      toast.success("Page content updated successfully");
+      setIsEditContentOpen(false);
+    } catch {
+      toast.error("Failed to save page content. Please try again.");
+    }
   };
 
   // Image Management Functions
@@ -177,6 +235,66 @@ export function AdminPage() {
     if (confirmed) {
       setSiteImages(siteImages.filter(img => img.id !== imageId));
       toast.success("Image deleted");
+    }
+  };
+
+  // Feature Management Functions
+  const handleSaveFeature = async () => {
+    if (!editingFeature) return;
+
+    try {
+      const res = await fetch(`${API_URL}/content/features/${editingFeature.feature_id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: editingFeature.title,
+          description: editingFeature.description,
+          icon: editingFeature.icon,
+        }),
+      });
+
+      if (!res.ok) {
+        const error = await res.text();
+        throw new Error(error || "Failed to update feature");
+      }
+      
+      // Update local state
+      setFeatures(features.map(f => f.feature_id === editingFeature.feature_id ? editingFeature : f));
+      toast.success("Feature updated successfully");
+      setIsEditFeatureOpen(false);
+      setEditingFeature(null);
+    } catch (err) {
+      console.error("Error saving feature:", err);
+      toast.error("Failed to update feature. Check console for details.");
+    }
+  };
+
+  // Template Description Management Functions
+  const handleSaveTemplate = async () => {
+    if (!editingTemplate) return;
+
+    try {
+      const res = await fetch(`${API_URL}/content/templates/${editingTemplate.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stage_name: editingTemplate.stage_name,
+          description: editingTemplate.description,
+        }),
+      });
+
+      if (!res.ok) {
+        const error = await res.text();
+        throw new Error(error || "Failed to update template");
+      }
+      
+      setTemplates(templates.map(t => t.id === editingTemplate.id ? editingTemplate : t));
+      toast.success("Template description updated successfully");
+      setIsEditTemplateOpen(false);
+      setEditingTemplate(null);
+    } catch (err) {
+      console.error("Error saving template:", err);
+      toast.error("Failed to update template. Check console for details.");
     }
   };
 
@@ -318,51 +436,117 @@ export function AdminPage() {
 
           {/* Content Management Tab */}
           <TabsContent value="content">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Page Content</CardTitle>
-                    <CardDescription>Edit text content across the website</CardDescription>
-                  </div>
-                  <Button 
-                    onClick={() => {
-                      setEditingContent(pageContent);
-                      setIsEditContentOpen(true);
-                    }}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit Content
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">Landing Page - Hero Section</h3>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <p className="text-lg font-semibold text-gray-900 mb-1">{pageContent.heroTitle}</p>
-                      <p className="text-sm text-gray-600">{pageContent.heroSubtitle}</p>
+            <div className="space-y-6">
+              {/* General Page Content */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Page Content</CardTitle>
+                      <CardDescription>Edit text content across the website</CardDescription>
                     </div>
+                    <Button 
+                      onClick={() => {
+                        setEditingContent(pageContent);
+                        setIsEditContentOpen(true);
+                      }}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Content
+                    </Button>
                   </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-2">Landing Page - Hero Section</h3>
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <p className="text-lg font-semibold text-gray-900 mb-1">{pageContent.heroTitle}</p>
+                        <p className="text-sm text-gray-600">{pageContent.heroSubtitle}</p>
+                      </div>
+                    </div>
 
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">About Section</h3>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-900">{pageContent.aboutText}</p>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-2">About Section</h3>
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-900">{pageContent.aboutText}</p>
+                      </div>
                     </div>
-                  </div>
 
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">Features Section Title</h3>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-900">{pageContent.featuresTitle}</p>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-2">Features Section Title</h3>
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-900">{pageContent.featuresTitle}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+
+              {/* Features Descriptions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Feature Descriptions</CardTitle>
+                  <CardDescription>Edit descriptions for each feature</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {features.map((feature) => (
+                      <div key={feature.feature_id} className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50">
+                        <div className="flex-1">
+                          <h3 className="font-medium text-gray-900 mb-1">{feature.title}</h3>
+                          <p className="text-sm text-gray-600">{feature.description}</p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const featureCopy = { ...feature };
+                            setEditingFeature(featureCopy);
+                            setIsEditFeatureOpen(true);
+                          }}
+                          className="ml-4"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Template Descriptions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Template Descriptions</CardTitle>
+                  <CardDescription>Edit descriptions for each budget template</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {templates.map((template) => (
+                      <div key={template.id} className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50">
+                        <div className="flex-1">
+                          <h3 className="font-medium text-gray-900 mb-1">{template.stage_name}</h3>
+                          <p className="text-sm text-gray-600">{template.description}</p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditingTemplate(template);
+                            setIsEditTemplateOpen(true);
+                          }}
+                          className="ml-4"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Image Management Tab */}
@@ -539,8 +723,7 @@ export function AdminPage() {
                 id="aboutText"
                 value={editingContent.aboutText}
                 onChange={(e) => setEditingContent({...editingContent, aboutText: e.target.value})}
-                className="mt-1"
-                rows={4}
+                className="mt-1 min-h-[120px]"
               />
             </div>
 
@@ -636,6 +819,96 @@ export function AdminPage() {
             >
               <Save className="w-4 h-4 mr-2" />
               Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Feature Dialog */}
+      <Dialog open={isEditFeatureOpen} onOpenChange={setIsEditFeatureOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Feature</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-3 py-2">
+            <div>
+              <Label htmlFor="featureTitle">Title</Label>
+              <Input
+                id="featureTitle"
+                value={editingFeature?.title || ""}
+                onChange={(e) => editingFeature && setEditingFeature({...editingFeature, title: e.target.value})}
+                className="mt-1"
+                autoFocus
+              />
+            </div>
+            <div>
+              <Label htmlFor="featureDesc">Description</Label>
+              <Textarea
+                id="featureDesc"
+                value={editingFeature?.description || ""}
+                onChange={(e) => editingFeature && setEditingFeature({...editingFeature, description: e.target.value})}
+                className="mt-1 min-h-[80px]"
+              />
+            </div>
+            <div>
+              <Label htmlFor="featureIcon">Icon</Label>
+              <Input
+                id="featureIcon"
+                value={editingFeature?.icon || ""}
+                onChange={(e) => editingFeature && setEditingFeature({...editingFeature, icon: e.target.value})}
+                placeholder="e.g. BarChart3"
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditFeatureOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveFeature} className="bg-green-600">
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Template Dialog */}
+      <Dialog open={isEditTemplateOpen} onOpenChange={setIsEditTemplateOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Template</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-3 py-2">
+            <div>
+              <Label htmlFor="templateName">Template Name</Label>
+              <Input
+                id="templateName"
+                value={editingTemplate?.stage_name || ""}
+                onChange={(e) => editingTemplate && setEditingTemplate({...editingTemplate, stage_name: e.target.value})}
+                className="mt-1"
+                autoFocus
+              />
+            </div>
+            <div>
+              <Label htmlFor="templateDesc">Description</Label>
+              <Textarea
+                id="templateDesc"
+                value={editingTemplate?.description || ""}
+                onChange={(e) => editingTemplate && setEditingTemplate({...editingTemplate, description: e.target.value})}
+                className="mt-1 min-h-[80px]"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditTemplateOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveTemplate} className="bg-green-600">
+              Save
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -174,7 +174,7 @@ export function AccountPage() {
                   <p className="text-sm text-gray-600">Update your personal details</p>
                 </div>
                 <Avatar className="w-20 h-20">
-                  <AvatarImage src="" />
+                  <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="User avatar" />
                   <AvatarFallback className="bg-green-100 text-green-700 text-2xl">
                     JD
                   </AvatarFallback>

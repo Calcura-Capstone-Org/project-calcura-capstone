@@ -1,6 +1,6 @@
 # Lines 1 - 39 written by Emma Wikingstad
 from fastapi import FastAPI
-from routers import users, roles, permissions, user_roles, budgets, sessions, categories, templates, template_items, goals
+from routers import users, roles, permissions, user_roles, budgets, sessions, categories, templates, template_items, goals, content
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -23,6 +23,7 @@ app.include_router(categories.router)
 app.include_router(templates.router)
 app.include_router(template_items.router)
 app.include_router(goals.router)
+app.include_router(content.router)
 
 @app.get("/")
 def root():
