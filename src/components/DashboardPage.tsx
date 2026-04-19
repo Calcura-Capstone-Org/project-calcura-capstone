@@ -423,40 +423,127 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-gray-500 uppercase tracking-wide">Income</span>
-              <DollarSign className="w-5 h-5 text-green-600" />
-            </div>
-            <div className="text-2xl font-semibold text-gray-900">${incomeTotal.toLocaleString()}</div>
-          </Card>
+          {(() => {
+            const remaining = Math.max(incomeTotal - totalExpenses, 0);
+            const slices = [
+              { name: "Expenses", value: totalExpenses, color: "#ef4444" },
+              { name: "Debt", value: debtBalance, color: "#f97316" },
+              { name: "Donations", value: monthlyDonationsTotal, color: "#ec4899" },
+              { name: "Savings", value: savingsAccountsTotal, color: "#22c55e" },
+              { name: "Investing", value: investingAccountsTotal, color: "#3b82f6" },
+              { name: "Unallocated", value: Math.max(finalBalance, 0), color: "#9ca3af" },
+            ].filter((s) => s.value > 0);
 
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-gray-500 uppercase tracking-wide">Expenses</span>
-              <CreditCard className="w-5 h-5 text-red-600" />
-            </div>
-            <div className="text-2xl font-semibold text-gray-900">${totalExpenses.toLocaleString()}</div>
-          </Card>
+            const colorMap: Record<string, string> = Object.fromEntries(slices.map((s) => [s.name, s.color]));
+            colorMap["Remaining"] = "#3b82f6";
 
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-gray-500 uppercase tracking-wide">Remaining</span>
-              <Target className="w-5 h-5 text-blue-600" />
-            </div>
-            <div className="text-2xl font-semibold text-gray-900">${(incomeTotal - totalExpenses).toLocaleString()}</div>
-          </Card>
+            const MiniTooltipContent = ({ active, payload }: { active?: boolean; payload?: Array<{ name: string; value: number }> }) => {
+              if (!active || !payload?.length) return null;
+              const item = payload[0];
+              const color = colorMap[item.name] ?? "#374151";
+              return (
+                <div className="rounded-md px-2 py-1 text-xs font-medium text-white shadow-lg" style={{ backgroundColor: color }}>
+                  {item.name}: ${item.value.toLocaleString()}
+                </div>
+              );
+            };
 
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-gray-500 uppercase tracking-wide">Net Balance</span>
-              {finalBalance >= 0 ? <TrendingUp className="w-5 h-5 text-green-600" /> : <TrendingDown className="w-5 h-5 text-red-600" />}
-            </div>
-            <div className={`text-2xl font-semibold ${finalBalance >= 0 ? "text-green-700" : "text-red-600"}`}>
-              ${finalBalance.toLocaleString()}
-            </div>
-            <span className="text-xs text-gray-500">After all costs</span>
-          </Card>
+            const MiniPie = ({ highlight }: { highlight: string }) => (
+              <PieChart width={80} height={80}>
+                <Pie
+                  data={slices}
+                  cx={40}
+                  cy={40}
+                  innerRadius={18}
+                  outerRadius={32}
+                  dataKey="value"
+                  strokeWidth={1}
+                  stroke="#fff"
+                >
+                  {slices.map((s, i) => (
+                    <Cell
+                      key={i}
+                      fill={s.name === highlight ? s.color : s.color + "30"}
+                      style={s.name === highlight ? { filter: "drop-shadow(0 0 3px rgba(0,0,0,0.2))" } : undefined}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip content={<MiniTooltipContent />} />
+              </PieChart>
+            );
+
+            return (
+              <>
+                <Card className="p-6 !gap-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-500 uppercase tracking-wide">Income</span>
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-2xl font-semibold text-gray-900">${incomeTotal.toLocaleString()}</div>
+                    <PieChart width={80} height={80}>
+                      <Pie data={slices} cx={40} cy={40} innerRadius={18} outerRadius={32} dataKey="value" strokeWidth={1} stroke="#fff">
+                        {slices.map((s, i) => <Cell key={i} fill={s.color} />)}
+                      </Pie>
+                      <Tooltip content={<MiniTooltipContent />} />
+                    </PieChart>
+                  </div>
+                </Card>
+
+                <Card className="p-6 !gap-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-500 uppercase tracking-wide">Expenses</span>
+                    <CreditCard className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-2xl font-semibold text-gray-900">${totalExpenses.toLocaleString()}</div>
+                    <MiniPie highlight="Expenses" />
+                  </div>
+                </Card>
+
+                <Card className="p-6 !gap-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-500 uppercase tracking-wide">Remaining</span>
+                    <Target className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-2xl font-semibold text-gray-900">${remaining.toLocaleString()}</div>
+                    {remaining > 0 ? (
+                      <PieChart width={80} height={80}>
+                        <Pie
+                          data={[
+                            { name: "Expenses", value: totalExpenses, color: "#ef444430" },
+                            { name: "Remaining", value: remaining, color: "#3b82f6" },
+                          ].filter((s) => s.value > 0)}
+                          cx={40} cy={40} innerRadius={18} outerRadius={32} dataKey="value" strokeWidth={1} stroke="#fff"
+                        >
+                          <Cell fill="#ef444430" />
+                          <Cell fill="#3b82f6" style={{ filter: "drop-shadow(0 0 3px rgba(0,0,0,0.2))" }} />
+                        </Pie>
+                        <Tooltip content={<MiniTooltipContent />} />
+                      </PieChart>
+                    ) : <div className="w-[80px] h-[80px]" />}
+                  </div>
+                </Card>
+
+                <Card className="p-6 !gap-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-500 uppercase tracking-wide">Net Balance</span>
+                    {finalBalance >= 0 ? <TrendingUp className="w-5 h-5 text-green-600" /> : <TrendingDown className="w-5 h-5 text-red-600" />}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className={`text-2xl font-semibold ${finalBalance >= 0 ? "text-green-700" : "text-red-600"}`}>
+                        ${finalBalance.toLocaleString()}
+                      </div>
+                      <span className="text-xs text-gray-500">After all costs</span>
+                    </div>
+                    <MiniPie highlight="Unallocated" />
+                  </div>
+                </Card>
+              </>
+            );
+          })()}
         </div>
 
         {/* Charts Row */}
@@ -537,67 +624,46 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
         </div>
 
 
-        {/* Category Detail Cards - 2x3 grid, condensed */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-gray-500 uppercase tracking-wide">Debt</span>
-              <CreditCard className="w-4 h-4 text-red-500" />
-            </div>
-            <div className="text-xl font-semibold text-gray-900">${debtBalance.toLocaleString()}</div>
-            <span className="text-xs text-red-600">Monthly debt payments</span>
-            <DetailRows rows={debtRows} expand={expandDebt} setExpand={setExpandDebt} color="#ef4444" />
-          </Card>
-
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-gray-500 uppercase tracking-wide">Donations</span>
-              <Heart className="w-4 h-4 text-pink-500" />
-            </div>
-            <div className="text-xl font-semibold text-gray-900">${monthlyDonationsTotal.toLocaleString()}</div>
-            <span className="text-xs text-pink-600">Monthly giving</span>
-            <DetailRows rows={donationRows} expand={expandDonations} setExpand={setExpandDonations} color="#ec4899" />
-          </Card>
-
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-gray-500 uppercase tracking-wide">Monthly Savings</span>
-              <PiggyBank className="w-4 h-4 text-green-500" />
-            </div>
-            <div className="text-xl font-semibold text-gray-900">${savingsAccountsTotal.toLocaleString()}</div>
-            <span className="text-xs text-green-600">Planned savings</span>
-            <DetailRows rows={savingsRows} expand={expandSavings} setExpand={setExpandSavings} color="#22c55e" />
-          </Card>
-
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-gray-500 uppercase tracking-wide">Monthly Investing</span>
-              <TrendingUp className="w-4 h-4 text-blue-500" />
-            </div>
-            <div className="text-xl font-semibold text-gray-900">${investingAccountsTotal.toLocaleString()}</div>
-            <span className="text-xs text-blue-600">Planned investing</span>
-            <DetailRows rows={investingRows} expand={expandInvesting} setExpand={setExpandInvesting} color="#3b82f6" />
-          </Card>
-
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-gray-500 uppercase tracking-wide">Savings Accounts</span>
-              <PiggyBank className="w-4 h-4 text-emerald-500" />
-            </div>
-            <div className="text-xl font-semibold text-gray-900">${savings501Total.toLocaleString()}</div>
-            <span className="text-xs text-emerald-600">Account balances</span>
-            <DetailRows rows={savings501Rows} expand={expandSavings501} setExpand={setExpandSavings501} color="#10b981" />
-          </Card>
-
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-gray-500 uppercase tracking-wide">Investment Accounts</span>
-              <TrendingUp className="w-4 h-4 text-indigo-500" />
-            </div>
-            <div className="text-xl font-semibold text-gray-900">${investing601Total.toLocaleString()}</div>
-            <span className="text-xs text-indigo-600">Account balances</span>
-            <DetailRows rows={investing601Rows} expand={expandInvesting601} setExpand={setExpandInvesting601} color="#6366f1" />
-          </Card>
+        {/* Category Detail Cards - 2x3 grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {[
+            { label: "Debt", amount: debtBalance, subtitle: "Monthly debt payments", icon: CreditCard, iconColor: "text-red-500", barColor: "#ef4444", subtitleColor: "text-red-600", rows: debtRows, expand: expandDebt, setExpand: setExpandDebt },
+            { label: "Donations", amount: monthlyDonationsTotal, subtitle: "Monthly giving", icon: Heart, iconColor: "text-pink-500", barColor: "#ec4899", subtitleColor: "text-pink-600", rows: donationRows, expand: expandDonations, setExpand: setExpandDonations },
+            { label: "Monthly Savings", amount: savingsAccountsTotal, subtitle: "Planned savings", icon: PiggyBank, iconColor: "text-green-500", barColor: "#22c55e", subtitleColor: "text-green-600", rows: savingsRows, expand: expandSavings, setExpand: setExpandSavings },
+            { label: "Monthly Investing", amount: investingAccountsTotal, subtitle: "Planned investing", icon: TrendingUp, iconColor: "text-blue-500", barColor: "#3b82f6", subtitleColor: "text-blue-600", rows: investingRows, expand: expandInvesting, setExpand: setExpandInvesting },
+            { label: "Savings Accounts", amount: savings501Total, subtitle: "Account balances", icon: PiggyBank, iconColor: "text-emerald-500", barColor: "#10b981", subtitleColor: "text-emerald-600", rows: savings501Rows, expand: expandSavings501, setExpand: setExpandSavings501 },
+            { label: "Investment Accounts", amount: investing601Total, subtitle: "Account balances", icon: TrendingUp, iconColor: "text-indigo-500", barColor: "#6366f1", subtitleColor: "text-indigo-600", rows: investing601Rows, expand: expandInvesting601, setExpand: setExpandInvesting601 },
+          ].map((card) => {
+            const Icon = card.icon;
+            const pct = incomeTotal > 0 ? Math.min((card.amount / incomeTotal) * 100, 100) : 0;
+            return (
+              <Card key={card.label} className="relative overflow-hidden p-6 !gap-0">
+                <div className="absolute inset-x-0 bottom-0 transition-all" style={{ height: `${pct}%`, backgroundColor: card.barColor, opacity: 0.07 }} />
+                <div className="relative flex gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-gray-500 uppercase tracking-wide">{card.label}</span>
+                      <Icon className={`w-5 h-5 ${card.iconColor}`} />
+                    </div>
+                    <div className="text-2xl font-semibold text-gray-900 mb-1">${card.amount.toLocaleString()}</div>
+                    <span className={`text-xs ${card.subtitleColor}`}>{card.subtitle}</span>
+                  </div>
+                  <div className="flex items-center shrink-0">
+                    <svg width="56" height="56" viewBox="0 0 56 56">
+                      <circle cx="28" cy="28" r="22" fill="none" stroke="#e5e7eb" strokeWidth="5" />
+                      <circle cx="28" cy="28" r="22" fill="none" stroke={card.barColor} strokeWidth="5" strokeLinecap="round"
+                        strokeDasharray={`${(pct / 100) * 2 * Math.PI * 22} ${2 * Math.PI * 22}`}
+                        transform="rotate(-90 28 28)" />
+                      <text x="28" y="30" textAnchor="middle" fontSize="11" fontWeight="600" fill="#374151">{Math.round(pct)}%</text>
+                    </svg>
+                  </div>
+                </div>
+                <div className="relative">
+                  <DetailRows rows={card.rows} expand={card.expand} setExpand={card.setExpand} color={card.barColor} />
+                </div>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Quick Actions */}

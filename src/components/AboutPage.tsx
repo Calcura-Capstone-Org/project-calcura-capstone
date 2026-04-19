@@ -24,7 +24,7 @@ export function AboutPage() {
     <div className="min-h-screen bg-purple-50">
       <div className="max-w-7xl mx-auto px-6 py-16">
         {/* Hero */}
-        <div className="text-center mb-14">
+        <div className="text-center mb-16">
           <img src={logoImage} alt="Calcura Logo" className="w-24 h-24 object-contain mx-auto mb-5" />
           <h1 className="text-4xl text-purple-900 mb-4">About Calcura</h1>
           <div className="w-16 h-1 bg-purple-500 mx-auto rounded-full mb-4" />
@@ -64,25 +64,25 @@ export function AboutPage() {
         <div className="mb-12">
           <h2 className="text-2xl text-gray-900 mb-8 text-center">Core Values</h2>
           <div className="grid md:grid-cols-3 gap-6">
-            <Card className="p-7 text-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Users className="w-6 h-6 text-blue-600" />
+            <Card className="p-8 !gap-0 items-center text-center">
+              <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
+                <Users className="w-7 h-7 text-blue-600" />
               </div>
               <h3 className="text-base font-semibold text-gray-900 mb-2">Accessibility</h3>
               <p className="text-sm text-gray-600">Free financial tools for everyone, regardless of income or expertise.</p>
             </Card>
 
-            <Card className="p-7 text-center">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Shield className="w-6 h-6 text-green-600" />
+            <Card className="p-8 !gap-0 items-center text-center">
+              <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center mb-4">
+                <Shield className="w-7 h-7 text-green-600" />
               </div>
               <h3 className="text-base font-semibold text-gray-900 mb-2">Privacy & Security</h3>
               <p className="text-sm text-gray-600">Industry-leading protection for your sensitive financial data.</p>
             </Card>
 
-            <Card className="p-7 text-center">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="w-6 h-6 text-purple-600" />
+            <Card className="p-8 !gap-0 items-center text-center">
+              <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
+                <TrendingUp className="w-7 h-7 text-purple-600" />
               </div>
               <h3 className="text-base font-semibold text-gray-900 mb-2">Empowerment</h3>
               <p className="text-sm text-gray-600">Knowledge and insights to help you make informed financial decisions.</p>
