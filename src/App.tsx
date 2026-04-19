@@ -1,5 +1,5 @@
-import { useState } from "react"; // Jaren Schneider lines 1-170
-/* Jonathan Torres added back/forward navigation history */
+import { useState, useEffect } from "react"; // Jaren Schneider lines 1-170
+/* Jonathan Torres added browser history navigation */
 import { Header } from "./components/Header";
 import { HeroSection } from "./components/HeroSection";
 import { FeaturesSection } from "./components/FeaturesSection";

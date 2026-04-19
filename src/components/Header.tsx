@@ -1,6 +1,7 @@
 /*Jonathan Torres wrote 87 lines of code for this file*/
+/* Jonathan Torres added back/forward navigation buttons */
 import { Button } from "./ui/button";
-import { User } from "lucide-react";
+import { User, ChevronLeft, ChevronRight } from "lucide-react";
 import logoImage from "../assets/logoImage.png";
 
 /* API URL */
@@ -42,9 +43,13 @@ interface HeaderProps {
   username?: string;
   onAdminClick?: () => void;
   activePage?: ActivePage;
+  goBack?: () => void;
+  goForward?: () => void;
+  canGoBack?: boolean;
+  canGoForward?: boolean;
 }
 
-export function Header({ onLoginClick, onSignUpClick, onHomeClick, onAccountClick, onDashboardClick, onTemplatesClick, onAboutClick, onContactClick, onFeaturesClick, isLoggedIn = false, username = "", onAdminClick, activePage = null }: HeaderProps) {
+export function Header({ onLoginClick, onSignUpClick, onHomeClick, onAccountClick, onDashboardClick, onTemplatesClick, onAboutClick, onContactClick, onFeaturesClick, isLoggedIn = false, username = "", onAdminClick, activePage = null, goBack, goForward, canGoBack = false, canGoForward = false }: HeaderProps) {
   return (
     <header className="bg-white border-b">
       <div className="max-w-7xl mx-auto px-6 py-4">
