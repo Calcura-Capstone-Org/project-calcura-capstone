@@ -71,23 +71,30 @@ export default function App() {
     );
   }
 
+  const headerProps = {
+    onLoginClick: () => setCurrentPage("login"),
+    onSignUpClick: () => setCurrentPage("signup"),
+    onHomeClick: () => setCurrentPage("landing"),
+    onTemplatesClick: () => setCurrentPage("manageTemplate"),
+    onAccountClick: () => setCurrentPage("account"),
+    onDashboardClick: () => setCurrentPage("dashboard"),
+    onAboutClick: () => setCurrentPage("about"),
+    onContactClick: () => setCurrentPage("contact"),
+    onFeaturesClick: () => setCurrentPage("features"),
+    isLoggedIn,
+    username,
+    onAdminClick: () => setCurrentPage("admin"),
+  };
+
+  const footerProps = {
+    onAboutClick: () => setCurrentPage("about"),
+    onContactClick: () => setCurrentPage("contact"),
+  };
+
   if (currentPage === "dashboard") {
     return (
       <div className="min-h-screen bg-white">
-        <Header 
-          onLoginClick={() => setCurrentPage("login")}
-          onSignUpClick={() => setCurrentPage("signup")}
-          onHomeClick={() => setCurrentPage("landing")}
-          onTemplatesClick={() => setCurrentPage("manageTemplate")}
-          onAccountClick={() => setCurrentPage("account")}
-          onDashboardClick={() => setCurrentPage("dashboard")}
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-          onFeaturesClick={() => setCurrentPage("features")}
-          isLoggedIn={isLoggedIn}
-          username={username}
-          onAdminClick={() => setCurrentPage("admin")}
-        />
+        <Header {...headerProps} activePage="dashboard" />
         <DashboardPage
         onCreateBudget={() => setCurrentPage("template")}
         onFinancialGoals={() => setCurrentPage("recommendBudget")}
