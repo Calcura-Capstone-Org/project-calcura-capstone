@@ -799,11 +799,11 @@ export function TemplatePage({ onTemplateSaved, onCreateTemplate }: TemplatePage
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-green-50 py-8">
       <div className="max-w-4xl mx-auto px-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-gray-900 mb-2">Manage Your Budget Template</h1>
+          <h1 className="text-green-900 mb-2">Manage Your Budget Template</h1>
           {activeUserEmail && (
             <p className="text-sm text-gray-500 mb-1">Signed in as: {activeUserEmail}</p>
           )}
