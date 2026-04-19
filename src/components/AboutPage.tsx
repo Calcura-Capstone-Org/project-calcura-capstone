@@ -11,28 +11,29 @@ console.log("API_URL =", API_URL);
 
 export function AboutPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-purple-50">
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Hero Section */}
         <div className="text-center mb-16">
           <div className="flex justify-center mb-6">
-            <img 
-              src={logoImage} 
-              alt="Calcura Logo" 
+            <img
+              src={logoImage}
+              alt="Calcura Logo"
               className="w-24 h-24 object-contain"
             />
           </div>
-          <h1 className="text-4xl text-gray-900 mb-4">About Calcura</h1>
+          <h1 className="text-4xl text-purple-900 mb-4">About Calcura</h1>
+          <div className="w-16 h-1 bg-purple-500 mx-auto rounded-full mb-4" />
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Smart budgeting for every stage of life
           </p>
         </div>
 
         {/* What We Do */}
-        <Card className="p-8 mb-12">
+        <Card className="p-8 mb-12 border-l-4 border-l-purple-400">
           <div className="flex items-start gap-4 mb-6">
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Lightbulb className="w-6 h-6 text-green-600" />
+            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Lightbulb className="w-6 h-6 text-purple-600" />
             </div>
             <div>
               <h2 className="text-2xl text-gray-900 mb-4">What We Do</h2>
@@ -47,9 +48,9 @@ export function AboutPage() {
         </Card>
 
         {/* Mission Section */}
-        <Card className="p-8 mb-12 bg-gradient-to-br from-green-50 to-blue-50">
+        <Card className="p-8 mb-12 bg-gradient-to-br from-purple-50 to-indigo-50 border-l-4 border-l-purple-400">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
               <Target className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -101,7 +102,7 @@ export function AboutPage() {
         </div>
 
         {/* Who We Are */}
-        <Card className="p-8">
+        <Card className="p-8 border-l-4 border-l-purple-400">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
               <Heart className="w-6 h-6 text-purple-600" />
@@ -122,8 +123,8 @@ export function AboutPage() {
         </Card>
 
         {/* Why Choose Calcura */}
-        <div className="mt-12 bg-white rounded-lg p-8 border">
-          <h2 className="text-2xl text-gray-900 mb-6 text-center">Why Choose Calcura?</h2>
+        <div className="mt-12 bg-white rounded-lg p-8 border border-l-4 border-l-purple-400">
+          <h2 className="text-2xl text-purple-900 mb-6 text-center">Why Choose Calcura?</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="flex gap-3">
               <div className="text-green-600 mt-1">✓</div>

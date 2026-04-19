@@ -54,11 +54,12 @@ export function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-teal-50">
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl text-gray-900 mb-4">Contact Us</h1>
+          <h1 className="text-4xl text-teal-900 mb-4">Contact Us</h1>
+          <div className="w-16 h-1 bg-teal-500 mx-auto rounded-full mb-4" />
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Have a question or feedback? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
           </p>
@@ -67,10 +68,10 @@ export function ContactPage() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Contact Information */}
           <div className="lg:col-span-1 space-y-6">
-            <Card className="p-6">
+            <Card className="p-6 border-l-4 border-l-teal-400">
               <div className="flex items-start gap-4 mb-6">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Mail className="w-6 h-6 text-green-600" />
+                <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Mail className="w-6 h-6 text-teal-600" />
                 </div>
                 <div>
                   <h3 className="text-lg text-gray-900 mb-1">Email</h3>
@@ -80,9 +81,9 @@ export function ContactPage() {
               </div>
             </Card>
 
-            <Card className="p-6 bg-gradient-to-br from-green-50 to-blue-50">
+            <Card className="p-6 bg-gradient-to-br from-teal-50 to-cyan-50 border-l-4 border-l-teal-400">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="w-12 h-12 bg-teal-600 rounded-lg flex items-center justify-center flex-shrink-0">
                   <MessageSquare className="w-6 h-6 text-white" />
                 </div>
                 <div>
@@ -164,9 +165,9 @@ export function ContactPage() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button 
-                    type="submit" 
-                    className="bg-green-600 hover:bg-green-700 gap-2"
+                  <Button
+                    type="submit"
+                    className="bg-teal-600 hover:bg-teal-700 gap-2"
                   >
                     <Send size={18} />
                     Send Message

@@ -71,32 +71,36 @@ export default function App() {
     );
   }
 
+  const headerProps = {
+    onLoginClick: () => setCurrentPage("login"),
+    onSignUpClick: () => setCurrentPage("signup"),
+    onHomeClick: () => setCurrentPage("landing"),
+    onTemplatesClick: () => setCurrentPage("manageTemplate"),
+    onAccountClick: () => setCurrentPage("account"),
+    onDashboardClick: () => setCurrentPage("dashboard"),
+    onAboutClick: () => setCurrentPage("about"),
+    onContactClick: () => setCurrentPage("contact"),
+    onFeaturesClick: () => setCurrentPage("features"),
+    isLoggedIn,
+    username,
+    onAdminClick: () => setCurrentPage("admin"),
+  };
+
+  const footerProps = {
+    onAboutClick: () => setCurrentPage("about"),
+    onContactClick: () => setCurrentPage("contact"),
+  };
+
   if (currentPage === "dashboard") {
     return (
       <div className="min-h-screen bg-white">
-        <Header 
-          onLoginClick={() => setCurrentPage("login")}
-          onSignUpClick={() => setCurrentPage("signup")}
-          onHomeClick={() => setCurrentPage("landing")}
-          onTemplatesClick={() => setCurrentPage("manageTemplate")}
-          onAccountClick={() => setCurrentPage("account")}
-          onDashboardClick={() => setCurrentPage("dashboard")}
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-          onFeaturesClick={() => setCurrentPage("features")}
-          isLoggedIn={isLoggedIn}
-          username={username}
-          onAdminClick={() => setCurrentPage("admin")}
-        />
+        <Header {...headerProps} activePage="dashboard" />
         <DashboardPage
-        onCreateBudget={() => setCurrentPage("template")}
-        onFinancialGoals={() => setCurrentPage("recommendBudget")}
-        onManageBudgets={() => setCurrentPage("manageTemplate")}
-      />
-        <Footer 
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
+          onCreateBudget={() => setCurrentPage("template")}
+          onFinancialGoals={() => setCurrentPage("recommendBudget")}
+          onManageBudgets={() => setCurrentPage("manageTemplate")}
         />
+        <Footer {...footerProps} />
       </div>
     );
   }
@@ -104,25 +108,9 @@ export default function App() {
   if (currentPage === "account") {
     return (
       <div className="min-h-screen bg-white">
-        <Header 
-          onLoginClick={() => setCurrentPage("login")}
-          onSignUpClick={() => setCurrentPage("signup")}
-          onHomeClick={() => setCurrentPage("landing")}
-          onTemplatesClick={() => setCurrentPage("manageTemplate")}
-          onAccountClick={() => setCurrentPage("account")}
-          onDashboardClick={() => setCurrentPage("dashboard")}
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-          onFeaturesClick={() => setCurrentPage("features")}
-          isLoggedIn={isLoggedIn}
-          username={username}
-          onAdminClick={() => setCurrentPage("admin")}
-        />
+        <Header {...headerProps} />
         <AccountPage />
-        <Footer 
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-        />
+        <Footer {...footerProps} />
       </div>
     );
   }
@@ -130,155 +118,59 @@ export default function App() {
   if (currentPage === "recommendBudget") {
     return (
       <div className="min-h-screen bg-white">
-        <Header 
-          onLoginClick={() => setCurrentPage("login")}
-          onSignUpClick={() => setCurrentPage("signup")}
-          onHomeClick={() => setCurrentPage("landing")}
-          onTemplatesClick={() => setCurrentPage("manageTemplate")}
-          onAccountClick={() => setCurrentPage("account")}
-          onDashboardClick={() => setCurrentPage("dashboard")}
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-          onFeaturesClick={() => setCurrentPage("features")}
-          isLoggedIn={isLoggedIn}
-          username={username}
-          onAdminClick={() => setCurrentPage("admin")}
-        />
+        <Header {...headerProps} />
         <RecommendBudgetPage onCreateBudget={() => setCurrentPage("template")} />
-        <Footer 
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-        />
+        <Footer {...footerProps} />
       </div>
     );
   }
 
   if (currentPage === "about") {
     return (
-      <div className="min-h-screen bg-white">
-        <Header 
-          onLoginClick={() => setCurrentPage("login")}
-          onSignUpClick={() => setCurrentPage("signup")}
-          onHomeClick={() => setCurrentPage("landing")}
-          onTemplatesClick={() => setCurrentPage("manageTemplate")}
-          onAccountClick={() => setCurrentPage("account")}
-          onDashboardClick={() => setCurrentPage("dashboard")}
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-          onFeaturesClick={() => setCurrentPage("features")}
-          isLoggedIn={isLoggedIn}
-          username={username}
-          onAdminClick={() => setCurrentPage("admin")}
-        />
+      <div className="min-h-screen bg-purple-50">
+        <Header {...headerProps} activePage="about" />
         <AboutPage />
-        <Footer 
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-        />
+        <Footer {...footerProps} />
       </div>
     );
   }
 
   if (currentPage === "contact") {
     return (
-      <div className="min-h-screen bg-white">
-        <Header 
-          onLoginClick={() => setCurrentPage("login")}
-          onSignUpClick={() => setCurrentPage("signup")}
-          onHomeClick={() => setCurrentPage("landing")}
-          onTemplatesClick={() => setCurrentPage("manageTemplate")}
-          onAccountClick={() => setCurrentPage("account")}
-          onDashboardClick={() => setCurrentPage("dashboard")}
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-          onFeaturesClick={() => setCurrentPage("features")}
-          isLoggedIn={isLoggedIn}
-          username={username}
-          onAdminClick={() => setCurrentPage("admin")}
-        />
+      <div className="min-h-screen bg-teal-50">
+        <Header {...headerProps} activePage="contact" />
         <ContactPage />
-        <Footer 
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-        />
+        <Footer {...footerProps} />
       </div>
     );
   }
 
   if (currentPage === "template") {
     return (
-      <div className="min-h-screen bg-white">
-        <Header 
-          onLoginClick={() => setCurrentPage("login")}
-          onSignUpClick={() => setCurrentPage("signup")}
-          onHomeClick={() => setCurrentPage("landing")}
-          onTemplatesClick={() => setCurrentPage("manageTemplate")}
-          onAccountClick={() => setCurrentPage("account")}
-          onDashboardClick={() => setCurrentPage("dashboard")}
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-          onFeaturesClick={() => setCurrentPage("features")}
-          isLoggedIn={isLoggedIn}
-          username={username}
-          onAdminClick={() => setCurrentPage("admin")}
-        />
+      <div className="min-h-screen bg-green-50">
+        <Header {...headerProps} activePage="template" />
         <TemplatePage onTemplateSaved={() => setCurrentPage("dashboard")} />
-        <Footer 
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-        />
+        <Footer {...footerProps} />
       </div>
     );
   }
 
   if (currentPage === "manageTemplate") {
     return (
-      <div className="min-h-screen bg-white">
-        <Header 
-          onLoginClick={() => setCurrentPage("login")}
-          onSignUpClick={() => setCurrentPage("signup")}
-          onHomeClick={() => setCurrentPage("landing")}
-          onTemplatesClick={() => setCurrentPage("manageTemplate")}
-          onAccountClick={() => setCurrentPage("account")}
-          onDashboardClick={() => setCurrentPage("dashboard")}
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-          onFeaturesClick={() => setCurrentPage("features")}
-          isLoggedIn={isLoggedIn}
-          username={username}
-          onAdminClick={() => setCurrentPage("admin")}
-        />
+      <div className="min-h-screen bg-green-50">
+        <Header {...headerProps} activePage="manageTemplate" />
         <ManageTemplatePage onTemplateSaved={() => setCurrentPage("dashboard")} onCreateTemplate={() => setCurrentPage("template")} />
-        <Footer 
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-        />
+        <Footer {...footerProps} />
       </div>
     );
   }
 
   if (currentPage === "features") {
     return (
-      <div className="min-h-screen bg-white">
-        <Header
-          onLoginClick={() => setCurrentPage("login")}
-          onSignUpClick={() => setCurrentPage("signup")}
-          onHomeClick={() => setCurrentPage("landing")}
-          onTemplatesClick={() => setCurrentPage("manageTemplate")}
-          onAccountClick={() => setCurrentPage("account")}
-          onDashboardClick={() => setCurrentPage("dashboard")}
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-          onFeaturesClick={() => setCurrentPage("features")}
-          isLoggedIn={isLoggedIn}
-          username={username}
-          onAdminClick={() => setCurrentPage("admin")}
-        />
+      <div className="min-h-screen bg-blue-50">
+        <Header {...headerProps} activePage="features" />
         <FeaturesPage onRecommendBudgetClick={() => setCurrentPage("recommendBudget")} onGoalSettingClick={() => setCurrentPage("goalSet")} onGoalSeekClick={() => setCurrentPage("goalBudget")} />
-        <Footer
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-        />
+        <Footer {...footerProps} />
       </div>
     );
   }
@@ -286,25 +178,9 @@ export default function App() {
   if (currentPage === "goalSet") {
     return (
       <div className="min-h-screen bg-white">
-        <Header
-          onLoginClick={() => setCurrentPage("login")}
-          onSignUpClick={() => setCurrentPage("signup")}
-          onHomeClick={() => setCurrentPage("landing")}
-          onTemplatesClick={() => setCurrentPage("manageTemplate")}
-          onAccountClick={() => setCurrentPage("account")}
-          onDashboardClick={() => setCurrentPage("dashboard")}
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-          onFeaturesClick={() => setCurrentPage("features")}
-          isLoggedIn={isLoggedIn}
-          username={username}
-          onAdminClick={() => setCurrentPage("admin")}
-        />
+        <Header {...headerProps} />
         <GoalSetPage onGoalSaved={() => { setCurrentPage("goalBudget"); window.scrollTo(0, 0); }} />
-        <Footer
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-        />
+        <Footer {...footerProps} />
       </div>
     );
   }
@@ -312,25 +188,9 @@ export default function App() {
   if (currentPage === "goalBudget") {
     return (
       <div className="min-h-screen bg-white">
-        <Header
-          onLoginClick={() => setCurrentPage("login")}
-          onSignUpClick={() => setCurrentPage("signup")}
-          onHomeClick={() => setCurrentPage("landing")}
-          onTemplatesClick={() => setCurrentPage("manageTemplate")}
-          onAccountClick={() => setCurrentPage("account")}
-          onDashboardClick={() => setCurrentPage("dashboard")}
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-          onFeaturesClick={() => setCurrentPage("features")}
-          isLoggedIn={isLoggedIn}
-          username={username}
-          onAdminClick={() => setCurrentPage("admin")}
-        />
+        <Header {...headerProps} />
         <GoalBudget onCreateBudget={() => setCurrentPage("template")} />
-        <Footer
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-        />
+        <Footer {...footerProps} />
       </div>
     );
   }
@@ -338,52 +198,20 @@ export default function App() {
   if (currentPage === "admin") {
     return (
       <div className="min-h-screen bg-white">
-        <Header
-          onLoginClick={() => setCurrentPage("login")}
-          onSignUpClick={() => setCurrentPage("signup")}
-          onHomeClick={() => setCurrentPage("landing")}
-          onTemplatesClick={() => setCurrentPage("manageTemplate")}
-          onAccountClick={() => setCurrentPage("account")}
-          onDashboardClick={() => setCurrentPage("dashboard")}
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-          onFeaturesClick={() => setCurrentPage("features")}
-          isLoggedIn={isLoggedIn}
-          username={username}
-          onAdminClick={() => setCurrentPage("admin")}
-        />
+        <Header {...headerProps} />
         <AdminPage />
-        <Footer
-          onAboutClick={() => setCurrentPage("about")}
-          onContactClick={() => setCurrentPage("contact")}
-        />
+        <Footer {...footerProps} />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-white">
-      <Header 
-        onLoginClick={() => setCurrentPage("login")}
-        onSignUpClick={() => setCurrentPage("signup")}
-        onHomeClick={() => setCurrentPage("landing")}
-        onTemplatesClick={() => setCurrentPage("manageTemplate")}
-        onAccountClick={() => setCurrentPage("account")}
-        onDashboardClick={() => setCurrentPage("dashboard")}
-        onAboutClick={() => setCurrentPage("about")}
-        onContactClick={() => setCurrentPage("contact")}
-        onFeaturesClick={() => setCurrentPage("features")}
-        isLoggedIn={isLoggedIn}
-        username={username}
-        onAdminClick={() => setCurrentPage("admin")}
-      />
+      <Header {...headerProps} />
       <HeroSection />
       <FeaturesSection />
       <BudgetTemplatesSection onSelectTemplate={() => setCurrentPage("template")} />
-      <Footer 
-        onAboutClick={() => setCurrentPage("about")}
-        onContactClick={() => setCurrentPage("contact")}
-      />
+      <Footer {...footerProps} />
       <FeedbackButton />
     </div>
   );

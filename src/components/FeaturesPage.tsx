@@ -34,10 +34,13 @@ interface FeaturesSectionProps {
 
 export function FeaturesSection({ onRecommendBudgetClick, onGoalSettingClick, onGoalSeekClick }: FeaturesSectionProps) {
   return (
-    <section id="features" className="py-20 bg-white">
+    <section id="features" className="py-20 bg-gradient-to-b from-blue-50 to-white">
       <div className="max-w-7xl mx-auto px-6">
-        <h2 className="text-gray-900 mb-12">Features</h2>
-        
+        <div className="text-center mb-12">
+          <h2 className="text-3xl text-blue-900 mb-3">Features</h2>
+          <div className="w-16 h-1 bg-blue-500 mx-auto rounded-full" />
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {features.map((feature) => {
             const Icon = feature.icon;
@@ -47,7 +50,7 @@ export function FeaturesSection({ onRecommendBudgetClick, onGoalSettingClick, on
             return (
               <Card
                 key={feature.title}
-                className={`p-8 text-center hover:shadow-lg transition-shadow${
+                className={`p-8 text-center hover:shadow-lg transition-shadow border-t-4 border-t-blue-500${
                   isRecommended || isGoalSetting || isGoalSeek ? " cursor-pointer" : ""
                 }`}
                 onClick={
