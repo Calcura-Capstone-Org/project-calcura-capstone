@@ -119,8 +119,8 @@ export function ContactPage() {
 
           {/* Contact Form */}
           <div className="lg:col-span-2">
-            <Card className="p-6">
-              <h2 className="text-xl text-gray-900 mb-5">Send us a Message</h2>
+            <Card className="p-8">
+              <h2 className="text-2xl text-gray-900 mb-6">Send us a Message</h2>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
