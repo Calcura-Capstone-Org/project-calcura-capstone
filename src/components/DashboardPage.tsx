@@ -1,4 +1,5 @@
 /* Jaehyeong Shin wrote the original version of this file */
+/* Jonathan Torres updated the UI styling and added Recharts visualizations */
 import { useEffect, useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
