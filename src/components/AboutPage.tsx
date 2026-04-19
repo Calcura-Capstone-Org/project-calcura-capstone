@@ -30,10 +30,10 @@ export function AboutPage() {
         </div>
 
         {/* What We Do */}
-        <Card className="p-8 mb-12">
+        <Card className="p-8 mb-12 border-l-4 border-l-purple-400">
           <div className="flex items-start gap-4 mb-6">
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Lightbulb className="w-6 h-6 text-green-600" />
+            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Lightbulb className="w-6 h-6 text-purple-600" />
             </div>
             <div>
               <h2 className="text-2xl text-gray-900 mb-4">What We Do</h2>
