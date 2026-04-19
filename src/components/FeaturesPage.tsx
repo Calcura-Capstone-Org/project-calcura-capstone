@@ -64,11 +64,11 @@ export function FeaturesSection({ onRecommendBudgetClick, onGoalSettingClick, on
                   : undefined
                 }
               >
-                <div className={`inline-flex items-center justify-center w-14 h-14 ${feature.color} rounded-2xl mb-4`}>
-                  <Icon className="w-7 h-7 text-white" />
+                <div className={`inline-flex items-center justify-center w-16 h-16 ${feature.color} rounded-2xl mb-5`}>
+                  <Icon className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-base font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-sm text-gray-600">{feature.description}</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">{feature.title}</h3>
+                <p className="text-gray-600">{feature.description}</p>
               </Card>
             );
           })}
