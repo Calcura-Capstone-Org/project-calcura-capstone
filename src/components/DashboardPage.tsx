@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
-import { TrendingUp, TrendingDown, DollarSign, CreditCard, PiggyBank, Target, Heart, ChevronDown, ChevronUp } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { TrendingUp, TrendingDown, DollarSign, CreditCard, PiggyBank, Target, Heart, ChevronDown, ChevronUp, Plus, Flag, Settings, ArrowRight } from "lucide-react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 
 /* API URL */
 const API_URL = import.meta.env.VITE_API_URL;
@@ -346,12 +346,14 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
   }));
 
   // Bar chart data for budget overview
+  const unallocated = Math.max(incomeTotal - totalExpenses - debtBalance - monthlyDonationsTotal - savingsAccountsTotal - investingAccountsTotal, 0);
   const budgetOverviewData = [
     { name: "Expenses", amount: totalExpenses, fill: "#ef4444" },
     { name: "Debt", amount: debtBalance, fill: "#f97316" },
     { name: "Donations", amount: monthlyDonationsTotal, fill: "#ec4899" },
     { name: "Savings", amount: savingsAccountsTotal, fill: "#22c55e" },
     { name: "Investing", amount: investingAccountsTotal, fill: "#3b82f6" },
+    { name: "Unallocated", amount: unallocated, fill: "#9ca3af" },
   ].filter((d) => d.amount > 0);
 
   // Collapsible detail rows component
@@ -420,35 +422,35 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="p-5">
-            <div className="flex items-center justify-between mb-1">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-gray-500 uppercase tracking-wide">Income</span>
-              <DollarSign className="w-4 h-4 text-green-600" />
+              <DollarSign className="w-5 h-5 text-green-600" />
             </div>
             <div className="text-2xl font-semibold text-gray-900">${incomeTotal.toLocaleString()}</div>
           </Card>
 
-          <Card className="p-5">
-            <div className="flex items-center justify-between mb-1">
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-gray-500 uppercase tracking-wide">Expenses</span>
-              <CreditCard className="w-4 h-4 text-red-600" />
+              <CreditCard className="w-5 h-5 text-red-600" />
             </div>
             <div className="text-2xl font-semibold text-gray-900">${totalExpenses.toLocaleString()}</div>
           </Card>
 
-          <Card className="p-5">
-            <div className="flex items-center justify-between mb-1">
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-gray-500 uppercase tracking-wide">Remaining</span>
-              <Target className="w-4 h-4 text-blue-600" />
+              <Target className="w-5 h-5 text-blue-600" />
             </div>
             <div className="text-2xl font-semibold text-gray-900">${(incomeTotal - totalExpenses).toLocaleString()}</div>
           </Card>
 
-          <Card className="p-5">
-            <div className="flex items-center justify-between mb-1">
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-gray-500 uppercase tracking-wide">Net Balance</span>
-              {finalBalance >= 0 ? <TrendingUp className="w-4 h-4 text-green-600" /> : <TrendingDown className="w-4 h-4 text-red-600" />}
+              {finalBalance >= 0 ? <TrendingUp className="w-5 h-5 text-green-600" /> : <TrendingDown className="w-5 h-5 text-red-600" />}
             </div>
             <div className={`text-2xl font-semibold ${finalBalance >= 0 ? "text-green-700" : "text-red-600"}`}>
               ${finalBalance.toLocaleString()}
@@ -502,22 +504,29 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
             )}
           </Card>
 
-          {/* Budget Overview Bar Chart */}
+          {/* Budget Allocation Pie Chart */}
           <Card className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Budget Allocation</h2>
             {budgetOverviewData.length > 0 ? (
               <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={budgetOverviewData} layout="vertical" margin={{ left: 20, right: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" tickFormatter={(v) => `$${v.toLocaleString()}`} fontSize={12} />
-                  <YAxis type="category" dataKey="name" width={80} fontSize={12} />
-                  <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
-                  <Bar dataKey="amount" radius={[0, 4, 4, 0]} barSize={28}>
+                <PieChart>
+                  <Pie
+                    data={budgetOverviewData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={100}
+                    dataKey="amount"
+                    labelLine={false}
+                    label={renderCustomizedLabel}
+                  >
                     {budgetOverviewData.map((entry, index) => (
-                      <Cell key={`bar-${index}`} fill={entry.fill} />
+                      <Cell key={`alloc-${index}`} fill={entry.fill} />
                     ))}
-                  </Bar>
-                </BarChart>
+                  </Pie>
+                  <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
+                  <Legend formatter={(value: string) => <span className="text-xs text-gray-600">{value}</span>} />
+                </PieChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-[260px] text-gray-400 text-sm">
@@ -527,83 +536,6 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
           </Card>
         </div>
 
-        {/* Income vs Outflows Summary Bar */}
-        {incomeTotal > 0 && (
-          <Card className="p-5 mb-8">
-            <h2 className="text-sm font-medium text-gray-700 mb-3">Income Utilization</h2>
-            <div className="w-full bg-gray-100 rounded-full h-6 flex overflow-hidden">
-              {totalExpenses > 0 && (
-                <div
-                  className="h-6 bg-red-400 flex items-center justify-center text-[10px] text-white font-medium"
-                  style={{ width: `${Math.min((totalExpenses / incomeTotal) * 100, 100)}%` }}
-                  title={`Expenses: $${totalExpenses.toLocaleString()}`}
-                >
-                  {(totalExpenses / incomeTotal) * 100 > 8 && "Expenses"}
-                </div>
-              )}
-              {debtBalance > 0 && (
-                <div
-                  className="h-6 bg-orange-400 flex items-center justify-center text-[10px] text-white font-medium"
-                  style={{ width: `${Math.min((debtBalance / incomeTotal) * 100, 100)}%` }}
-                  title={`Debt: $${debtBalance.toLocaleString()}`}
-                >
-                  {(debtBalance / incomeTotal) * 100 > 5 && "Debt"}
-                </div>
-              )}
-              {monthlyDonationsTotal > 0 && (
-                <div
-                  className="h-6 bg-pink-400 flex items-center justify-center text-[10px] text-white font-medium"
-                  style={{ width: `${Math.min((monthlyDonationsTotal / incomeTotal) * 100, 100)}%` }}
-                  title={`Donations: $${monthlyDonationsTotal.toLocaleString()}`}
-                >
-                  {(monthlyDonationsTotal / incomeTotal) * 100 > 5 && "Give"}
-                </div>
-              )}
-              {savingsAccountsTotal > 0 && (
-                <div
-                  className="h-6 bg-green-400 flex items-center justify-center text-[10px] text-white font-medium"
-                  style={{ width: `${Math.min((savingsAccountsTotal / incomeTotal) * 100, 100)}%` }}
-                  title={`Savings: $${savingsAccountsTotal.toLocaleString()}`}
-                >
-                  {(savingsAccountsTotal / incomeTotal) * 100 > 5 && "Save"}
-                </div>
-              )}
-              {investingAccountsTotal > 0 && (
-                <div
-                  className="h-6 bg-blue-400 flex items-center justify-center text-[10px] text-white font-medium"
-                  style={{ width: `${Math.min((investingAccountsTotal / incomeTotal) * 100, 100)}%` }}
-                  title={`Investing: $${investingAccountsTotal.toLocaleString()}`}
-                >
-                  {(investingAccountsTotal / incomeTotal) * 100 > 5 && "Invest"}
-                </div>
-              )}
-              {finalBalance > 0 && (
-                <div
-                  className="h-6 bg-gray-300 flex items-center justify-center text-[10px] text-gray-600 font-medium"
-                  style={{ width: `${(finalBalance / incomeTotal) * 100}%` }}
-                  title={`Unallocated: $${finalBalance.toLocaleString()}`}
-                >
-                  {(finalBalance / incomeTotal) * 100 > 8 && "Free"}
-                </div>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-3 mt-2">
-              {[
-                { label: "Expenses", color: "bg-red-400", amount: totalExpenses },
-                { label: "Debt", color: "bg-orange-400", amount: debtBalance },
-                { label: "Donations", color: "bg-pink-400", amount: monthlyDonationsTotal },
-                { label: "Savings", color: "bg-green-400", amount: savingsAccountsTotal },
-                { label: "Investing", color: "bg-blue-400", amount: investingAccountsTotal },
-                { label: "Unallocated", color: "bg-gray-300", amount: Math.max(finalBalance, 0) },
-              ].filter((d) => d.amount > 0).map((d) => (
-                <span key={d.label} className="flex items-center gap-1 text-xs text-gray-600">
-                  <span className={`w-2.5 h-2.5 rounded-sm ${d.color}`} />
-                  {d.label}
-                </span>
-              ))}
-            </div>
-          </Card>
-        )}
 
         {/* Category Detail Cards - 2x3 grid, condensed */}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
@@ -669,30 +601,48 @@ export function DashboardPage({ onCreateBudget, onFinancialGoals, onManageBudget
         </div>
 
         {/* Quick Actions */}
-        <div className="grid md:grid-cols-3 gap-4">
-          <Card
-            className="p-5 hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-green-500"
+        <div className="grid md:grid-cols-3 gap-6">
+          <button
+            className="group flex items-center gap-4 p-6 bg-white rounded-xl border border-gray-200 hover:border-green-400 hover:shadow-lg transition-all text-left"
             onClick={() => onCreateBudget?.()}
           >
-            <h3 className="text-sm font-semibold text-gray-900 mb-1">Create New Budget</h3>
-            <p className="text-xs text-gray-600">Start a new budget template</p>
-          </Card>
+            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-green-200 transition-colors">
+              <Plus className="w-6 h-6 text-green-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-base font-semibold text-gray-900">Create New Budget</h3>
+              <p className="text-sm text-gray-500">Start a new budget template</p>
+            </div>
+            <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-green-500 transition-colors" />
+          </button>
 
-          <Card
-            className="p-5 hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-blue-500"
+          <button
+            className="group flex items-center gap-4 p-6 bg-white rounded-xl border border-gray-200 hover:border-blue-400 hover:shadow-lg transition-all text-left"
             onClick={() => onFinancialGoals?.()}
           >
-            <h3 className="text-sm font-semibold text-gray-900 mb-1">Financial Goals</h3>
-            <p className="text-xs text-gray-600">Set and track your goals</p>
-          </Card>
+            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-blue-200 transition-colors">
+              <Flag className="w-6 h-6 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-base font-semibold text-gray-900">Financial Goals</h3>
+              <p className="text-sm text-gray-500">Set and track your goals</p>
+            </div>
+            <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-blue-500 transition-colors" />
+          </button>
 
-          <Card
-            className="p-5 hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-purple-500"
+          <button
+            className="group flex items-center gap-4 p-6 bg-white rounded-xl border border-gray-200 hover:border-purple-400 hover:shadow-lg transition-all text-left"
             onClick={() => onManageBudgets?.()}
           >
-            <h3 className="text-sm font-semibold text-gray-900 mb-1">Manage Budgets</h3>
-            <p className="text-xs text-gray-600">Update or delete existing budgets</p>
-          </Card>
+            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-purple-200 transition-colors">
+              <Settings className="w-6 h-6 text-purple-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-base font-semibold text-gray-900">Manage Budgets</h3>
+              <p className="text-sm text-gray-500">Update or delete existing budgets</p>
+            </div>
+            <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-purple-500 transition-colors" />
+          </button>
         </div>
       </div>
     </div>

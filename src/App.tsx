@@ -25,40 +25,27 @@ type PageView = "landing" | "template" | "manageTemplate" | "login" | "account" 
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<PageView>("landing");
-  const [history, setHistory] = useState<PageView[]>(["landing"]);
-  const [historyIndex, setHistoryIndex] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
 
   const navigate = (page: PageView) => {
-    const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(page);
-    setHistory(newHistory);
-    setHistoryIndex(newHistory.length - 1);
+    window.history.pushState({ page }, "", `/${page === "landing" ? "" : page}`);
     setCurrentPage(page);
     window.scrollTo(0, 0);
   };
 
-  const goBack = () => {
-    if (historyIndex > 0) {
-      const newIndex = historyIndex - 1;
-      setHistoryIndex(newIndex);
-      setCurrentPage(history[newIndex]);
-      window.scrollTo(0, 0);
-    }
-  };
+  useEffect(() => {
+    window.history.replaceState({ page: "landing" }, "", "/");
 
-  const goForward = () => {
-    if (historyIndex < history.length - 1) {
-      const newIndex = historyIndex + 1;
-      setHistoryIndex(newIndex);
-      setCurrentPage(history[newIndex]);
+    const handlePopState = (e: PopStateEvent) => {
+      const page: PageView = e.state?.page ?? "landing";
+      setCurrentPage(page);
       window.scrollTo(0, 0);
-    }
-  };
+    };
 
-  const canGoBack = historyIndex > 0;
-  const canGoForward = historyIndex < history.length - 1;
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   const handleLogin = () => {
     setIsLoggedIn(true);
@@ -117,10 +104,6 @@ export default function App() {
     isLoggedIn,
     username,
     onAdminClick: () => navigate("admin"),
-    goBack,
-    goForward,
-    canGoBack,
-    canGoForward,
   };
 
   const footerProps = {
