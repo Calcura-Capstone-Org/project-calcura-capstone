@@ -48,9 +48,9 @@ export function AboutPage() {
         </Card>
 
         {/* Mission Section */}
-        <Card className="p-8 mb-12 bg-gradient-to-br from-green-50 to-blue-50">
+        <Card className="p-8 mb-12 bg-gradient-to-br from-purple-50 to-indigo-50 border-l-4 border-l-purple-400">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
               <Target className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -102,7 +102,7 @@ export function AboutPage() {
         </div>
 
         {/* Who We Are */}
-        <Card className="p-8">
+        <Card className="p-8 border-l-4 border-l-purple-400">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
               <Heart className="w-6 h-6 text-purple-600" />
@@ -123,8 +123,8 @@ export function AboutPage() {
         </Card>
 
         {/* Why Choose Calcura */}
-        <div className="mt-12 bg-white rounded-lg p-8 border">
-          <h2 className="text-2xl text-gray-900 mb-6 text-center">Why Choose Calcura?</h2>
+        <div className="mt-12 bg-white rounded-lg p-8 border border-l-4 border-l-purple-400">
+          <h2 className="text-2xl text-purple-900 mb-6 text-center">Why Choose Calcura?</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="flex gap-3">
               <div className="text-green-600 mt-1">✓</div>
