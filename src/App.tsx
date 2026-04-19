@@ -1,4 +1,5 @@
-import { useState } from "react"; // Jaren Schneider lines 1-170 
+import { useState } from "react"; // Jaren Schneider lines 1-170
+/* Jonathan Torres added back/forward navigation history */
 import { Header } from "./components/Header";
 import { HeroSection } from "./components/HeroSection";
 import { FeaturesSection } from "./components/FeaturesSection";
@@ -24,27 +25,59 @@ type PageView = "landing" | "template" | "manageTemplate" | "login" | "account" 
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<PageView>("landing");
+  const [history, setHistory] = useState<PageView[]>(["landing"]);
+  const [historyIndex, setHistoryIndex] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
+
+  const navigate = (page: PageView) => {
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(page);
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+    setCurrentPage(page);
+    window.scrollTo(0, 0);
+  };
+
+  const goBack = () => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      setCurrentPage(history[newIndex]);
+      window.scrollTo(0, 0);
+    }
+  };
+
+  const goForward = () => {
+    if (historyIndex < history.length - 1) {
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      setCurrentPage(history[newIndex]);
+      window.scrollTo(0, 0);
+    }
+  };
+
+  const canGoBack = historyIndex > 0;
+  const canGoForward = historyIndex < history.length - 1;
 
   const handleLogin = () => {
     setIsLoggedIn(true);
     setUsername(localStorage.getItem("username") ?? "");
-    setCurrentPage("dashboard");
+    navigate("dashboard");
   };
 
   if (currentPage === "login") {
     return (
-      <LoginPage 
-        onClose={() => setCurrentPage("landing")}
-        onCreateAccount={() => setCurrentPage("signup")}
+      <LoginPage
+        onClose={() => navigate("landing")}
+        onCreateAccount={() => navigate("signup")}
         onContinueAsGuest={() => {
           // Handle continue as guest
-          setCurrentPage("landing");
+          navigate("landing");
         }}
-        onHomeClick={() => setCurrentPage("landing")}
+        onHomeClick={() => navigate("landing")}
         onLoginSuccess={handleLogin}
-        onForgotPassword={() => setCurrentPage("forgotPassword")}
+        onForgotPassword={() => navigate("forgotPassword")}
 
       />
     );
@@ -53,11 +86,11 @@ export default function App() {
   if (currentPage === "signup") {
     return (
       <SignUpPage
-        onClose={() => setCurrentPage("landing")}
-        onCreateAccount={() => setCurrentPage("login")}
-        onContinueAsGuest={() => setCurrentPage("landing")}
-        onHomeClick={() => setCurrentPage("landing")}
-        onLoginSuccess={handleLogin}  
+        onClose={() => navigate("landing")}
+        onCreateAccount={() => navigate("login")}
+        onContinueAsGuest={() => navigate("landing")}
+        onHomeClick={() => navigate("landing")}
+        onLoginSuccess={handleLogin}
       />
     );
   }
@@ -65,30 +98,34 @@ export default function App() {
   if (currentPage === "forgotPassword") {
     return (
       <ForgotPasswordPage
-        onBackToLogin={() => setCurrentPage("login")}
-        onHomeClick={() => setCurrentPage("landing")}
+        onBackToLogin={() => navigate("login")}
+        onHomeClick={() => navigate("landing")}
       />
     );
   }
 
   const headerProps = {
-    onLoginClick: () => setCurrentPage("login"),
-    onSignUpClick: () => setCurrentPage("signup"),
-    onHomeClick: () => setCurrentPage("landing"),
-    onTemplatesClick: () => setCurrentPage("manageTemplate"),
-    onAccountClick: () => setCurrentPage("account"),
-    onDashboardClick: () => setCurrentPage("dashboard"),
-    onAboutClick: () => setCurrentPage("about"),
-    onContactClick: () => setCurrentPage("contact"),
-    onFeaturesClick: () => setCurrentPage("features"),
+    onLoginClick: () => navigate("login"),
+    onSignUpClick: () => navigate("signup"),
+    onHomeClick: () => navigate("landing"),
+    onTemplatesClick: () => navigate("manageTemplate"),
+    onAccountClick: () => navigate("account"),
+    onDashboardClick: () => navigate("dashboard"),
+    onAboutClick: () => navigate("about"),
+    onContactClick: () => navigate("contact"),
+    onFeaturesClick: () => navigate("features"),
     isLoggedIn,
     username,
-    onAdminClick: () => setCurrentPage("admin"),
+    onAdminClick: () => navigate("admin"),
+    goBack,
+    goForward,
+    canGoBack,
+    canGoForward,
   };
 
   const footerProps = {
-    onAboutClick: () => setCurrentPage("about"),
-    onContactClick: () => setCurrentPage("contact"),
+    onAboutClick: () => navigate("about"),
+    onContactClick: () => navigate("contact"),
   };
 
   if (currentPage === "dashboard") {
@@ -96,9 +133,9 @@ export default function App() {
       <div className="min-h-screen bg-white">
         <Header {...headerProps} activePage="dashboard" />
         <DashboardPage
-          onCreateBudget={() => setCurrentPage("template")}
-          onFinancialGoals={() => setCurrentPage("recommendBudget")}
-          onManageBudgets={() => setCurrentPage("manageTemplate")}
+          onCreateBudget={() => navigate("template")}
+          onFinancialGoals={() => navigate("recommendBudget")}
+          onManageBudgets={() => navigate("manageTemplate")}
         />
         <Footer {...footerProps} />
       </div>
@@ -119,7 +156,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-white">
         <Header {...headerProps} />
-        <RecommendBudgetPage onCreateBudget={() => setCurrentPage("template")} />
+        <RecommendBudgetPage onCreateBudget={() => navigate("template")} />
         <Footer {...footerProps} />
       </div>
     );
@@ -149,7 +186,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-green-50">
         <Header {...headerProps} activePage="template" />
-        <TemplatePage onTemplateSaved={() => setCurrentPage("dashboard")} />
+        <TemplatePage onTemplateSaved={() => navigate("dashboard")} />
         <Footer {...footerProps} />
       </div>
     );
@@ -159,7 +196,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-green-50">
         <Header {...headerProps} activePage="manageTemplate" />
-        <ManageTemplatePage onTemplateSaved={() => setCurrentPage("dashboard")} onCreateTemplate={() => setCurrentPage("template")} />
+        <ManageTemplatePage onTemplateSaved={() => navigate("dashboard")} onCreateTemplate={() => navigate("template")} />
         <Footer {...footerProps} />
       </div>
     );
@@ -169,7 +206,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-blue-50">
         <Header {...headerProps} activePage="features" />
-        <FeaturesPage onRecommendBudgetClick={() => setCurrentPage("recommendBudget")} onGoalSettingClick={() => setCurrentPage("goalSet")} onGoalSeekClick={() => setCurrentPage("goalBudget")} />
+        <FeaturesPage onRecommendBudgetClick={() => navigate("recommendBudget")} onGoalSettingClick={() => navigate("goalSet")} onGoalSeekClick={() => navigate("goalBudget")} />
         <Footer {...footerProps} />
       </div>
     );
@@ -179,7 +216,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-white">
         <Header {...headerProps} />
-        <GoalSetPage onGoalSaved={() => { setCurrentPage("goalBudget"); window.scrollTo(0, 0); }} />
+        <GoalSetPage onGoalSaved={() => navigate("goalBudget")} />
         <Footer {...footerProps} />
       </div>
     );
@@ -189,7 +226,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-white">
         <Header {...headerProps} />
-        <GoalBudget onCreateBudget={() => setCurrentPage("template")} />
+        <GoalBudget onCreateBudget={() => navigate("template")} />
         <Footer {...footerProps} />
       </div>
     );
@@ -210,7 +247,7 @@ export default function App() {
       <Header {...headerProps} />
       <HeroSection />
       <FeaturesSection />
-      <BudgetTemplatesSection onSelectTemplate={() => setCurrentPage("template")} />
+      <BudgetTemplatesSection onSelectTemplate={() => navigate("template")} />
       <Footer {...footerProps} />
       <FeedbackButton />
     </div>
