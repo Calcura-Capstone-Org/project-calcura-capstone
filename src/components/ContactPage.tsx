@@ -67,32 +67,32 @@ export function ContactPage() {
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Sidebar - Contact Info + FAQ */}
-          <div className="space-y-4">
-            <Card className="p-5 border-l-4 border-l-teal-400">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-9 h-9 bg-teal-100 rounded-lg flex items-center justify-center shrink-0">
-                  <Mail className="w-4 h-4 text-teal-600" />
+          <div className="space-y-5">
+            <Card className="p-6 border-l-4 border-l-teal-400">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center shrink-0">
+                  <Mail className="w-5 h-5 text-teal-600" />
                 </div>
-                <h3 className="text-sm font-semibold text-gray-900">Email</h3>
+                <h3 className="text-base font-semibold text-gray-900">Email</h3>
               </div>
-              <p className="text-xs text-gray-600 ml-12">support@calcura.com</p>
-              <p className="text-xs text-gray-600 ml-12">hello@calcura.com</p>
+              <p className="text-sm text-gray-600 ml-[52px]">support@calcura.com</p>
+              <p className="text-sm text-gray-600 ml-[52px]">hello@calcura.com</p>
             </Card>
 
-            <Card className="p-5 bg-gradient-to-br from-teal-50 to-cyan-50 border-l-4 border-l-teal-400">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-9 h-9 bg-teal-600 rounded-lg flex items-center justify-center shrink-0">
-                  <MessageSquare className="w-4 h-4 text-white" />
+            <Card className="p-6 bg-gradient-to-br from-teal-50 to-cyan-50 border-l-4 border-l-teal-400">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center shrink-0">
+                  <MessageSquare className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="text-sm font-semibold text-gray-900">Quick Response</h3>
+                <h3 className="text-base font-semibold text-gray-900">Quick Response</h3>
               </div>
-              <p className="text-xs text-gray-600 ml-12">
+              <p className="text-sm text-gray-600 ml-[52px]">
                 We typically respond within 24 hours on business days.
               </p>
             </Card>
 
             {/* Collapsible FAQ */}
-            <Card className="p-5">
+            <Card className="p-6">
               <button
                 onClick={() => setExpandFaq(!expandFaq)}
                 className="flex items-center justify-between w-full"
