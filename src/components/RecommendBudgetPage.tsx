@@ -1,8 +1,11 @@
-/* Jaehyeong Shin wrote all 176 lines of code for this file */
+/* Jaehyeong Shin wrote the original version of this file */
+/* Jonathan Torres updated the UI styling and added Recharts visualizations */
 import { useEffect, useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
-import { TrendingUp, TrendingDown, DollarSign, CreditCard, PiggyBank, Target } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, CreditCard, Target, ChevronDown, ChevronUp } from "lucide-react";
+
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
 
 /* API URL */
 const API_URL = import.meta.env.VITE_API_URL;
@@ -64,6 +67,19 @@ const toMonthlyAmount = (item: TemplateItemApi): number => {
     return 0;
   }
   return item.period === "year" ? roundToCents(amount / 12) : roundToCents(amount);
+};
+
+const RADIAN = Math.PI / 180;
+const renderPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: { cx: number; cy: number; midAngle: number; innerRadius: number; outerRadius: number; percent: number }) => {
+  if (percent < 0.05) return null;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  return (
+    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600}>
+      {`${(percent * 100).toFixed(0)}%`}
+    </text>
+  );
 };
 
 export function RecommendBudgetPage({ onCreateBudget }: RecommendBudgetPageProps) {
@@ -322,7 +338,6 @@ export function RecommendBudgetPage({ onCreateBudget }: RecommendBudgetPageProps
   const givingMeetsTarget = givingTotal >= givingTarget;
   const savingsTarget = roundToCents(incomeTotal * 0.1);
   const recommendedSavings = savingsTotal > savingsTarget ? savingsTotal : savingsTarget;
-  const savingsDelta = roundToCents(recommendedSavings - savingsTotal);
   const savingsMeetsTarget = savingsTotal >= savingsTarget;
   const investingTarget = roundToCents(incomeTotal * 0.1);
   const rawRecommendedInvesting = investingTotal > investingTarget ? investingTotal : investingTarget;
@@ -361,13 +376,9 @@ export function RecommendBudgetPage({ onCreateBudget }: RecommendBudgetPageProps
     ? Math.min(Math.abs(rawRemainingFunds), rawRecommendedInvesting)
     : 0;
   const recommendedInvesting = roundToCents(rawRecommendedInvesting - investingReduction);
-  const investingDelta = roundToCents(recommendedInvesting - investingTotal);
   const remainingRecommendedFunds = roundToCents(rawRemainingFunds + investingReduction);
 
-  // Ensure there is enough to cover the current monthly debt contribution.
-  // Shortfall is how much remaining funds fall short of debtBalance.
   const debtShortfall = roundToCents(Math.max(0, debtBalance - Math.max(0, remainingRecommendedFunds)));
-  // First pull from investing, then from savings to cover the shortfall.
   const debtInvestingReduction = Math.min(debtShortfall, recommendedInvesting);
   const debtSavingsReduction = roundToCents(Math.min(debtShortfall - debtInvestingReduction, recommendedSavings));
   const adjustedRecommendedInvesting = roundToCents(recommendedInvesting - debtInvestingReduction);
@@ -383,615 +394,429 @@ export function RecommendBudgetPage({ onCreateBudget }: RecommendBudgetPageProps
     incomeTotal - totalExpenses - debtBalance - givingTotal - savingsTotal - investingTotal
   );
 
-  const budgetSummary = {
-    totalIncome: incomeTotal,
-    totalExpenses,
-    remaining: incomeTotal - totalExpenses,
-    savingsGoal: 1000,
-    currentSavings: 760,
-  };
+  // Recommended allocation pie chart data
+  const allocationPieData = [
+    { name: "Housing", value: recommendedHousing, color: "#8b5cf6" },
+    { name: "Required Expenses", value: recommendedRequiredExpenses, color: "#ef4444" },
+    { name: "Personal", value: recommendedPersonalSpending, color: "#f97316" },
+    { name: "Giving", value: recommendedGiving, color: "#ec4899" },
+    { name: "Savings", value: adjustedRecommendedSavings, color: "#22c55e" },
+    { name: "Investing", value: adjustedRecommendedInvesting, color: "#3b82f6" },
+    { name: "Debt Payoff", value: recommendedDebtPayoff, color: "#f59e0b" },
+  ].filter((d) => d.value > 0);
 
-  const categories = expenseRows.map((expense) => ({
-    ...expense,
-    budget: incomeTotal,
-  }));
+  // Current vs Recommended comparison bar chart data
+  const comparisonData = [
+    { name: "Housing", current: housingExpense, recommended: recommendedHousing },
+    { name: "Req. Expenses", current: requiredExpensesTotal, recommended: recommendedRequiredExpenses },
+    { name: "Personal", current: personalSpendingTotal, recommended: recommendedPersonalSpending },
+    { name: "Giving", current: givingTotal, recommended: recommendedGiving },
+    { name: "Savings", current: savingsTotal, recommended: adjustedRecommendedSavings },
+    { name: "Investing", current: investingTotal, recommended: adjustedRecommendedInvesting },
+    { name: "Debt", current: debtBalance, recommended: recommendedDebtPayoff },
+  ].filter((d) => d.current > 0 || d.recommended > 0);
+
+  // Adjustment summary data
+  const adjustmentItems = [
+    { name: "Housing / Rent", delta: housingDelta },
+    { name: "Required Expenses", delta: requiredExpensesDelta },
+    { name: "Personal Spending", delta: personalSpendingDelta },
+    { name: "Giving", delta: givingDelta },
+    { name: "Savings", delta: adjustedSavingsDelta },
+    { name: "Investing", delta: adjustedInvestingDelta },
+    { name: "Debt Contribution", delta: debtAdjustment },
+  ];
+
+  // Breakdown row renderer
+  const BreakdownRows = ({ rows, total, show, toggle }: { rows: ExpenseRow[]; total: number; show: boolean; toggle: () => void }) => (
+    <>
+      <button onClick={toggle} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 mt-2">
+        {show ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        {show ? "Hide" : "Show"} breakdown
+      </button>
+      {show && (
+        rows.length > 0 ? (
+          <div className="mt-3 space-y-2">
+            {rows.map((row) => (
+              <div key={row.name}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-gray-700">{row.name}</span>
+                  <span className="text-xs text-gray-900">${row.amount.toLocaleString()}</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-1.5">
+                  <div
+                    className={`${row.color} h-1.5 rounded-full transition-all`}
+                    style={{ width: `${total > 0 ? Math.min((row.amount / total) * 100, 100) : 0}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-2 text-xs text-gray-400">No items found.</p>
+        )
+      )}
+    </>
+  );
+
+  // Category card for each budget section
+  const CategoryCard = ({ title, current, target, recommended, delta, meetsTarget, note, children }: {
+    title: string;
+    current: number;
+    target: number | string;
+    recommended: number;
+    delta: number;
+    meetsTarget: boolean;
+    note?: string;
+    children?: React.ReactNode;
+  }) => (
+    <Card className="p-5 mb-4">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+        <span className={`text-xs px-2 py-0.5 rounded-full ${meetsTarget ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+          {meetsTarget ? "On target" : "Needs adjustment"}
+        </span>
+      </div>
+      <div className="grid grid-cols-4 gap-3 mb-3">
+        <div className="text-center">
+          <p className="text-[10px] text-gray-500 uppercase">Current</p>
+          <p className="text-lg font-semibold text-gray-900">${current.toLocaleString()}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-[10px] text-gray-500 uppercase">Target</p>
+          <p className="text-lg font-semibold text-gray-900">{typeof target === "string" ? target : `$${target.toLocaleString()}`}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-[10px] text-gray-500 uppercase">Recommended</p>
+          <p className="text-lg font-semibold text-gray-900">${recommended.toLocaleString()}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-[10px] text-gray-500 uppercase">Adjust</p>
+          <p className={`text-lg font-semibold ${delta < 0 ? "text-red-600" : delta > 0 ? "text-amber-600" : "text-green-700"}`}>
+            {delta > 0 ? `+$${delta.toLocaleString()}` : delta < 0 ? `-$${Math.abs(delta).toLocaleString()}` : "$0"}
+          </p>
+        </div>
+      </div>
+      {note && <p className="text-xs text-amber-700 mb-1">{note}</p>}
+      {children}
+    </Card>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Welcome Header + Template Data Source */}
-        <div className="flex flex-row items-start justify-between mb-8 gap-6">
+        {/* Header + Template Selector */}
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl text-gray-900 mb-2">Welcome back, {userName}!</h1>
+            <h1 className="text-3xl text-gray-900 mb-1">Welcome back, {userName}!</h1>
             <p className="text-gray-600">Here is your recommended budget.</p>
           </div>
-          <Card className="p-4 w-64 shrink-0">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl text-gray-900">Template Data Source</h2>
+          <Card className="p-4 w-full sm:w-72 shrink-0">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">Template Source</span>
               <Button variant="ghost" size="sm" onClick={handleUpdateIncome}>Sync</Button>
             </div>
-            <div className="space-y-4">
-              {userTemplates.length > 0 ? (
-                <select
-                  className="w-full border rounded px-3 py-2"
-                  value={selectedTemplate}
-                  onChange={(e) => setSelectedTemplate(e.target.value)}
-                >
-                  <option value="" disabled>
-                    Select a template
+            {userTemplates.length > 0 ? (
+              <select
+                className="w-full border rounded px-3 py-2 text-sm"
+                value={selectedTemplate}
+                onChange={(e) => setSelectedTemplate(e.target.value)}
+              >
+                <option value="" disabled>Select a template</option>
+                {userTemplates.map((template) => (
+                  <option key={template.id} value={String(template.id)}>
+                    {template.name}
                   </option>
-                  {userTemplates.map((template) => (
-                    <option key={template.id} value={String(template.id)}>
-                      {template.name}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <div className="text-sm text-gray-500">No templates found for your account.</div>
-              )}
-            </div>
+                ))}
+              </select>
+            ) : (
+              <div className="text-sm text-gray-500">No templates found.</div>
+            )}
           </Card>
         </div>
+
+        {syncError && (
+          <div className="mb-6 rounded border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+            {syncError}
+          </div>
+        )}
 
         {/* Summary Cards */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Total Income</span>
-              <DollarSign className="w-5 h-5 text-green-600" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <Card className="p-5">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-500 uppercase tracking-wide">Income</span>
+              <DollarSign className="w-4 h-4 text-green-600" />
             </div>
-            <div className="text-2xl text-gray-900">
-              ${budgetSummary.totalIncome.toLocaleString()}
-            </div>
-            <div className="flex items-center gap-1 mt-2 text-sm text-green-600">
-              <TrendingUp size={16} />
-              <span>+12% from last month</span>
-            </div>
+            <div className="text-2xl font-semibold text-gray-900">${incomeTotal.toLocaleString()}</div>
           </Card>
 
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Total Expenses</span>
-              <CreditCard className="w-5 h-5 text-red-600" />
+          <Card className="p-5">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-500 uppercase tracking-wide">Expenses</span>
+              <CreditCard className="w-4 h-4 text-red-600" />
             </div>
-            <div className="text-2xl text-gray-900">
-              ${budgetSummary.totalExpenses.toLocaleString()}
-            </div>
-            <div className="flex items-center gap-1 mt-2 text-sm text-red-600">
-              <TrendingDown size={16} />
-              <span>-5% from last month</span>
-            </div>
+            <div className="text-2xl font-semibold text-gray-900">${totalExpenses.toLocaleString()}</div>
           </Card>
 
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Remaining Budget</span>
-              <Target className="w-5 h-5 text-blue-600" />
+          <Card className="p-5">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-500 uppercase tracking-wide">Remaining</span>
+              <Target className="w-4 h-4 text-blue-600" />
             </div>
-            <div className="text-2xl text-gray-900">
-              ${budgetSummary.remaining.toLocaleString()}
-            </div>
-            <div className="text-sm text-gray-600 mt-2">
-              35% of monthly income
-            </div>
+            <div className="text-2xl font-semibold text-gray-900">${(incomeTotal - totalExpenses).toLocaleString()}</div>
           </Card>
 
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Final Balance</span>
-              <DollarSign className="w-5 h-5 text-indigo-600" />
+          <Card className="p-5">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-500 uppercase tracking-wide">Net Balance</span>
+              {finalBalance >= 0 ? <TrendingUp className="w-4 h-4 text-green-600" /> : <TrendingDown className="w-4 h-4 text-red-600" />}
             </div>
-            <div className="text-2xl text-gray-900">
+            <div className={`text-2xl font-semibold ${finalBalance >= 0 ? "text-green-700" : "text-red-600"}`}>
               ${finalBalance.toLocaleString()}
             </div>
-            <div className={`flex items-center gap-1 mt-2 text-sm ${finalBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
-              {finalBalance >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-              <span>Income minus all tracked costs</span>
-            </div>
+            <span className="text-xs text-gray-500">After all costs</span>
           </Card>
         </div>
 
-        {/* Income Card */}
-        <Card className="p-6 mb-6">
-          <h2 className="text-xl text-gray-900 mb-4">Recommended Budget</h2>
-          {syncError && (
-            <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {syncError}
-            </div>
-          )}
-          <div className="rounded-lg border bg-white p-5">
-            <p className="text-xs text-gray-500">Total Income</p>
-            <p className="text-3xl text-gray-900 mt-1">${incomeTotal.toLocaleString()}</p>
-          </div>
-        </Card>
-
-        {/* Housing Card */}
-        <Card className="p-6 mb-6">
-          <h2 className="text-xl text-gray-900 mb-4">Housing / Rent</h2>
-          <div className="grid md:grid-cols-3 gap-4 mb-4">
-            <div className="rounded-lg border bg-white p-4">
-              <p className="text-xs text-gray-500">Current Housing/Rent</p>
-              <p className="text-xl text-gray-900 mt-1">${housingExpense.toLocaleString()}</p>
-            </div>
-            <div className="rounded-lg border bg-white p-4">
-              <p className="text-xs text-gray-500">Recommended Housing/Rent</p>
-              <p className="text-xl text-gray-900 mt-1">${recommendedHousing.toLocaleString()}</p>
-            </div>
-            <div className="rounded-lg border bg-white p-4">
-              <p className="text-xs text-gray-500">Adjustment Needed</p>
-              <p className={`text-xl mt-1 ${housingDelta < 0 ? "text-red-600" : "text-green-700"}`}>
-                {housingDelta < 0 ? `-$${Math.abs(housingDelta).toLocaleString()}` : `$${housingDelta.toLocaleString()}`}
-              </p>
-            </div>
-          </div>
-          {incomeTotal > 0 ? (
-            <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
-              {hasHousingData ? (
-                housingExpense <= housingTarget
-                  ? `Your current housing/rent spending is already within the recommended limit, so the recommended amount stays at $${recommendedHousing.toLocaleString()}.`
-                  : `To stay near 25% of income, reduce housing/rent from $${housingExpense.toLocaleString()} to about $${recommendedHousing.toLocaleString()}.`
+        {/* Charts: Recommended Allocation + Current vs Recommended */}
+        {incomeTotal > 0 && (
+          <div className="grid lg:grid-cols-2 gap-6 mb-8">
+            {/* Recommended Allocation Pie */}
+            <Card className="p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Recommended Allocation</h2>
+              {allocationPieData.length > 0 ? (
+                <div className="flex flex-col md:flex-row items-center gap-4">
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={allocationPieData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={renderPieLabel}
+                        outerRadius={105}
+                        dataKey="value"
+                      >
+                        {allocationPieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="space-y-1.5 min-w-[150px]">
+                    {allocationPieData.map((item) => (
+                      <div key={item.name} className="flex items-center gap-2 text-xs">
+                        <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: item.color }} />
+                        <span className="text-gray-700">{item.name}</span>
+                        <span className="text-gray-500 ml-auto">${item.value.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               ) : (
-                `No Housing/Rent expense was found in this template. Based on total income, the recommended housing/rent amount is $${recommendedHousing.toLocaleString()}.`
+                <div className="flex items-center justify-center h-[250px] text-gray-400 text-sm">
+                  No data to display
+                </div>
               )}
-            </div>
-          ) : (
-            <div className="rounded border bg-gray-50 px-3 py-2 text-sm text-gray-600">
-              No income data found for this template. Add income to receive a housing recommendation.
-            </div>
-          )}
-        </Card>
+            </Card>
 
+            {/* Current vs Recommended Bar Chart */}
+            <Card className="p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Current vs Recommended</h2>
+              {comparisonData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={comparisonData} margin={{ left: 10, right: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="name" fontSize={11} angle={-20} textAnchor="end" height={50} />
+                    <YAxis tickFormatter={(v) => `$${v.toLocaleString()}`} fontSize={11} />
+                    <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
+                    <Legend wrapperStyle={{ fontSize: "12px" }} />
+                    <Bar dataKey="current" name="Current" fill="#94a3b8" radius={[3, 3, 0, 0]} barSize={18} />
+                    <Bar dataKey="recommended" name="Recommended" fill="#3b82f6" radius={[3, 3, 0, 0]} barSize={18} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[250px] text-gray-400 text-sm">
+                  No data to display
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
+
+        {/* Budget Category Cards */}
         {incomeTotal > 0 && (
           <>
-            {/* Required Expenses Card */}
-            <Card className="p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl text-gray-900">Required Expenses</h2>
-                <Button variant="outline" size="sm" onClick={() => setShowExpenseBreakdown((v) => !v)}>
-                  {showExpenseBreakdown ? "Hide Breakdown" : "See Breakdown"}
-                </Button>
-              </div>
-              <div className="grid md:grid-cols-4 gap-4 mb-4">
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Current Required Expenses</p>
-                  <p className="text-xl text-gray-900 mt-1">${requiredExpensesTotal.toLocaleString()}</p>
-                </div>
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Required Expenses Target</p>
-                  <p className="text-xl text-gray-900 mt-1">${requiredExpensesTarget.toLocaleString()}</p>
-                </div>
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Recommended Required Expenses</p>
-                  <p className="text-xl text-gray-900 mt-1">${recommendedRequiredExpenses.toLocaleString()}</p>
-                </div>
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Expenses Adjustment</p>
-                  <p className={`text-xl mt-1 ${requiredExpensesDelta < 0 ? "text-red-600" : "text-green-700"}`}>
-                    {requiredExpensesDelta < 0 ? `-$${Math.abs(requiredExpensesDelta).toLocaleString()}` : `$${requiredExpensesDelta.toLocaleString()}`}
-                  </p>
-                </div>
-              </div>
-              <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
-                {requiredExpensesMeetsTarget
-                  ? `Your required expenses are already within the 25% recommended limit at $${requiredExpensesTotal.toLocaleString()}.`
-                  : `To meet the 25% guideline, reduce required expenses from $${requiredExpensesTotal.toLocaleString()} to about $${recommendedRequiredExpenses.toLocaleString()}.`}
-              </div>
+            <CategoryCard
+              title="Housing / Rent"
+              current={housingExpense}
+              target={housingTarget}
+              recommended={recommendedHousing}
+              delta={housingDelta}
+              meetsTarget={!hasHousingData || housingExpense <= housingTarget}
+            />
 
-              {showExpenseBreakdown && (() => {
-                const breakdownRows = expenseRows.filter(
-                  (e) => !personalSpendingNames.includes(e.name.trim().toLowerCase()) && e.name.trim().toLowerCase() !== "housing/rent"
-                );
-                return breakdownRows.length > 0 ? (
-                  <div className="mt-4 space-y-3">
-                    {breakdownRows.map((expense) => (
-                      <div key={expense.name}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm text-gray-700">{expense.name}</span>
-                          <span className="text-sm text-gray-900">
-                            ${expense.amount.toLocaleString()} / ${requiredExpensesTotal.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className={`${expense.color} h-2 rounded-full transition-all`}
-                            style={{
-                              width: `${requiredExpensesTotal > 0
-                                ? Math.min((expense.amount / requiredExpensesTotal) * 100, 100)
-                                : 0}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-4 text-sm text-gray-500">No required expense items found.</p>
-                );
-              })()}
-            </Card>
+            <CategoryCard
+              title="Required Expenses"
+              current={requiredExpensesTotal}
+              target={requiredExpensesTarget}
+              recommended={recommendedRequiredExpenses}
+              delta={requiredExpensesDelta}
+              meetsTarget={requiredExpensesMeetsTarget}
+            >
+              <BreakdownRows
+                rows={expenseRows.filter((e) => !personalSpendingNames.includes(e.name.trim().toLowerCase()) && e.name.trim().toLowerCase() !== "housing/rent")}
+                total={requiredExpensesTotal}
+                show={showExpenseBreakdown}
+                toggle={() => setShowExpenseBreakdown((v) => !v)}
+              />
+            </CategoryCard>
 
-            {/* Personal Spending Card */}
-            <Card className="p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl text-gray-900">Personal Spending</h2>
-                <Button variant="outline" size="sm" onClick={() => setShowPersonalBreakdown((v) => !v)}>
-                  {showPersonalBreakdown ? "Hide Breakdown" : "See Breakdown"}
-                </Button>
-              </div>
-              <div className="grid md:grid-cols-4 gap-4 mb-4">
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Current Personal Spending</p>
-                  <p className="text-xl text-gray-900 mt-1">${personalSpendingTotal.toLocaleString()}</p>
-                </div>
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Personal Spending Target</p>
-                  <p className="text-xl text-gray-900 mt-1">${personalSpendingTarget.toLocaleString()}</p>
-                </div>
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Recommended Personal Spending</p>
-                  <p className="text-xl text-gray-900 mt-1">${recommendedPersonalSpending.toLocaleString()}</p>
-                </div>
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Spending Adjustment</p>
-                  <p className={`text-xl mt-1 ${personalSpendingDelta < 0 ? "text-red-600" : "text-green-700"}`}>
-                    {personalSpendingDelta < 0 ? `-$${Math.abs(personalSpendingDelta).toLocaleString()}` : `$${personalSpendingDelta.toLocaleString()}`}
-                  </p>
-                </div>
-              </div>
-              <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
-                {personalSpendingMeetsTarget
-                  ? `Your personal spending (Entertainment + Dining Out) is already within the 3% recommended limit at $${personalSpendingTotal.toLocaleString()}.`
-                  : `To meet the 3% guideline, reduce personal spending from $${personalSpendingTotal.toLocaleString()} to about $${recommendedPersonalSpending.toLocaleString()}.`}
-              </div>
+            <CategoryCard
+              title="Personal Spending"
+              current={personalSpendingTotal}
+              target={personalSpendingTarget}
+              recommended={recommendedPersonalSpending}
+              delta={personalSpendingDelta}
+              meetsTarget={personalSpendingMeetsTarget}
+            >
+              <BreakdownRows
+                rows={expenseRows.filter((e) => personalSpendingNames.includes(e.name.trim().toLowerCase()))}
+                total={personalSpendingTotal}
+                show={showPersonalBreakdown}
+                toggle={() => setShowPersonalBreakdown((v) => !v)}
+              />
+            </CategoryCard>
 
-              {showPersonalBreakdown && (() => {
-                const breakdownRows = expenseRows.filter(
-                  (e) => personalSpendingNames.includes(e.name.trim().toLowerCase())
-                );
-                return breakdownRows.length > 0 ? (
-                  <div className="mt-4 space-y-3">
-                    {breakdownRows.map((expense) => (
-                      <div key={expense.name}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm text-gray-700">{expense.name}</span>
-                          <span className="text-sm text-gray-900">
-                            ${expense.amount.toLocaleString()} / ${personalSpendingTotal.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className={`${expense.color} h-2 rounded-full transition-all`}
-                            style={{
-                              width: `${personalSpendingTotal > 0
-                                ? Math.min((expense.amount / personalSpendingTotal) * 100, 100)
-                                : 0}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-4 text-sm text-gray-500">No personal spending items found.</p>
-                );
-              })()}
-            </Card>
+            <CategoryCard
+              title="Giving"
+              current={givingTotal}
+              target={givingTarget}
+              recommended={recommendedGiving}
+              delta={givingDelta}
+              meetsTarget={givingMeetsTarget}
+            >
+              <BreakdownRows
+                rows={givingRows}
+                total={givingTotal}
+                show={showGivingBreakdown}
+                toggle={() => setShowGivingBreakdown((v) => !v)}
+              />
+            </CategoryCard>
 
-            <Card className="p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl text-gray-900">Giving</h2>
-                <Button variant="outline" size="sm" onClick={() => setShowGivingBreakdown((v) => !v)}>
-                  {showGivingBreakdown ? "Hide Breakdown" : "See Breakdown"}
-                </Button>
-              </div>
-              <div className="grid md:grid-cols-4 gap-4 mb-4">
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Current Giving</p>
-                  <p className="text-xl text-gray-900 mt-1">${givingTotal.toLocaleString()}</p>
-                </div>
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Giving Target</p>
-                  <p className="text-xl text-gray-900 mt-1">${givingTarget.toLocaleString()}</p>
-                </div>
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Recommended Giving</p>
-                  <p className="text-xl text-gray-900 mt-1">${recommendedGiving.toLocaleString()}</p>
-                </div>
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Giving Adjustment</p>
-                  <p className={`text-xl mt-1 ${givingDelta > 0 ? "text-amber-600" : "text-green-700"}`}>
-                    {givingDelta > 0 ? `+$${givingDelta.toLocaleString()}` : `$${givingDelta.toLocaleString()}`}
-                  </p>
-                </div>
-              </div>
-              <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
-                {givingMeetsTarget
-                  ? `Your current giving already meets or exceeds the 10% recommendation, so the recommended amount stays at $${recommendedGiving.toLocaleString()}.`
-                  : `A recommended giving amount is $${recommendedGiving.toLocaleString()}, which is 10% of total income.`}
-              </div>
+            <CategoryCard
+              title="Savings"
+              current={savingsTotal}
+              target={savingsTarget}
+              recommended={adjustedRecommendedSavings}
+              delta={adjustedSavingsDelta}
+              meetsTarget={savingsMeetsTarget}
+              note={debtSavingsReduction > 0 ? `$${debtSavingsReduction.toLocaleString()} redirected from savings to cover debt.` : undefined}
+            >
+              <BreakdownRows
+                rows={savingsRows}
+                total={savingsTotal}
+                show={showSavingsBreakdown}
+                toggle={() => setShowSavingsBreakdown((v) => !v)}
+              />
+            </CategoryCard>
 
-              {showGivingBreakdown && (
-                givingRows.length > 0 ? (
-                  <div className="mt-4 space-y-3">
-                    {givingRows.map((row) => (
-                      <div key={row.name}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm text-gray-700">{row.name}</span>
-                          <span className="text-sm text-gray-900">
-                            ${row.amount.toLocaleString()} / ${givingTotal.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className={`${row.color} h-2 rounded-full transition-all`}
-                            style={{ width: `${givingTotal > 0 ? Math.min((row.amount / givingTotal) * 100, 100) : 0}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-4 text-sm text-gray-500">No giving items found.</p>
-                )
-              )}
-            </Card>
+            <CategoryCard
+              title="Investing"
+              current={investingTotal}
+              target={investingTarget}
+              recommended={adjustedRecommendedInvesting}
+              delta={adjustedInvestingDelta}
+              meetsTarget={investingMeetsTarget}
+              note={debtInvestingReduction > 0 ? `$${debtInvestingReduction.toLocaleString()} redirected from investing to cover debt.` : undefined}
+            >
+              <BreakdownRows
+                rows={investingRows}
+                total={investingTotal}
+                show={showInvestingBreakdown}
+                toggle={() => setShowInvestingBreakdown((v) => !v)}
+              />
+            </CategoryCard>
 
-            {/* Savings Card */}
-            <Card className="p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl text-gray-900">Savings</h2>
-                <Button variant="outline" size="sm" onClick={() => setShowSavingsBreakdown((v) => !v)}>
-                  {showSavingsBreakdown ? "Hide Breakdown" : "See Breakdown"}
-                </Button>
-              </div>
-              <div className="grid md:grid-cols-4 gap-4 mb-4">
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Current Savings</p>
-                  <p className="text-xl text-gray-900 mt-1">${savingsTotal.toLocaleString()}</p>
+            {/* Remaining Funds */}
+            <Card className="p-5 mb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-semibold text-gray-900">Remaining Funds</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">After all recommended allocations</p>
                 </div>
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Savings Target</p>
-                  <p className="text-xl text-gray-900 mt-1">${savingsTarget.toLocaleString()}</p>
-                </div>
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Recommended Savings</p>
-                  <p className="text-xl text-gray-900 mt-1">${adjustedRecommendedSavings.toLocaleString()}</p>
-                </div>
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Savings Adjustment</p>
-                  <p className={`text-xl mt-1 ${adjustedSavingsDelta > 0 ? "text-amber-600" : "text-green-700"}`}>
-                    {adjustedSavingsDelta > 0 ? `+$${adjustedSavingsDelta.toLocaleString()}` : `$${adjustedSavingsDelta.toLocaleString()}`}
-                  </p>
-                </div>
-              </div>
-              <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
-                {savingsMeetsTarget
-                  ? `Your current savings already meet or exceed the 10% recommendation, so the recommended amount stays at $${adjustedRecommendedSavings.toLocaleString()}.`
-                  : `A recommended savings amount is $${adjustedRecommendedSavings.toLocaleString()}, which is 10% of total income.`}
-                {debtSavingsReduction > 0 && (
-                  <span className="block mt-1 text-amber-700">
-                    Note: ${debtSavingsReduction.toLocaleString()} has been redirected from savings to help cover the monthly debt contribution.
-                  </span>
-                )}
-              </div>
-
-              {showSavingsBreakdown && (
-                savingsRows.length > 0 ? (
-                  <div className="mt-4 space-y-3">
-                    {savingsRows.map((row) => (
-                      <div key={row.name}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm text-gray-700">{row.name}</span>
-                          <span className="text-sm text-gray-900">
-                            ${row.amount.toLocaleString()} / ${savingsTotal.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className={`${row.color} h-2 rounded-full transition-all`}
-                            style={{ width: `${savingsTotal > 0 ? Math.min((row.amount / savingsTotal) * 100, 100) : 0}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-4 text-sm text-gray-500">No savings items found.</p>
-                )
-              )}
-            </Card>
-
-            {/* Investing Card */}
-            <Card className="p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl text-gray-900">Investing</h2>
-                <Button variant="outline" size="sm" onClick={() => setShowInvestingBreakdown((v) => !v)}>
-                  {showInvestingBreakdown ? "Hide Breakdown" : "See Breakdown"}
-                </Button>
-              </div>
-              <div className="grid md:grid-cols-4 gap-4 mb-4">
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Current Investing</p>
-                  <p className="text-xl text-gray-900 mt-1">${investingTotal.toLocaleString()}</p>
-                </div>
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Investing Target</p>
-                  <p className="text-xl text-gray-900 mt-1">${investingTarget.toLocaleString()}</p>
-                </div>
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Recommended Investing</p>
-                  <p className="text-xl text-gray-900 mt-1">${adjustedRecommendedInvesting.toLocaleString()}</p>
-                </div>
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Investing Adjustment</p>
-                  <p className={`text-xl mt-1 ${adjustedInvestingDelta > 0 ? "text-amber-600" : adjustedInvestingDelta < 0 ? "text-red-600" : "text-green-700"}`}>
-                    {adjustedInvestingDelta > 0 ? `+$${adjustedInvestingDelta.toLocaleString()}` : `$${adjustedInvestingDelta.toLocaleString()}`}
-                  </p>
-                </div>
-              </div>
-              <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700">
-                {investingMeetsTarget
-                  ? `Your current investing already meets or exceeds the 10% recommendation, so the recommended amount stays at $${adjustedRecommendedInvesting.toLocaleString()}.`
-                  : `A recommended investing amount is $${adjustedRecommendedInvesting.toLocaleString()}, which is 10% of total income.`}
-                {debtInvestingReduction > 0 && (
-                  <span className="block mt-1 text-amber-700">
-                    Note: ${debtInvestingReduction.toLocaleString()} has been redirected from investing to help cover the monthly debt contribution.
-                  </span>
-                )}
-              </div>
-
-              {showInvestingBreakdown && (
-                investingRows.length > 0 ? (
-                  <div className="mt-4 space-y-3">
-                    {investingRows.map((row) => (
-                      <div key={row.name}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm text-gray-700">{row.name}</span>
-                          <span className="text-sm text-gray-900">
-                            ${row.amount.toLocaleString()} / ${investingTotal.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className={`${row.color} h-2 rounded-full transition-all`}
-                            style={{ width: `${investingTotal > 0 ? Math.min((row.amount / investingTotal) * 100, 100) : 0}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-4 text-sm text-gray-500">No investing items found.</p>
-                )
-              )}
-            </Card>
-
-            {/* Remaining Funds Card */}
-            <Card className="p-6 mb-8">
-              <h2 className="text-xl text-gray-900 mb-4">Remaining Funds</h2>
-              <div className="rounded-lg border bg-white px-5 py-4">
-                <p className="text-xs text-gray-500">Remaining Funds Based on Recommendations</p>
-                <p className={`text-3xl mt-1 ${adjustedRemainingFunds < 0 ? "text-red-600" : "text-gray-900"}`}>
+                <span className={`text-2xl font-semibold ${adjustedRemainingFunds < 0 ? "text-red-600" : "text-gray-900"}`}>
                   ${adjustedRemainingFunds.toLocaleString()}
-                </p>
-                <p className="text-sm text-gray-600 mt-2">
-                  Total income minus recommended housing/rent, required expenses, giving, savings, and investing.
-                </p>
+                </span>
               </div>
             </Card>
 
-            {/* Debt Contribution Card */}
-            <Card className="p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl text-gray-900">Debt Contribution</h2>
-                <Button variant="outline" size="sm" onClick={() => setShowDebtBreakdown((v) => !v)}>
-                  {showDebtBreakdown ? "Hide Breakdown" : "See Breakdown"}
-                </Button>
-              </div>
-              <div className="grid md:grid-cols-4 gap-4 mb-4">
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Current Monthly Debt Payments</p>
-                  <p className="text-xl text-gray-900 mt-1">${debtBalance.toLocaleString()}</p>
-                </div>
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Debt Payoff Target</p>
-                  <p className="text-xl text-gray-900 mt-1">Max</p>
-                </div>
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Recommended Debt Payoff</p>
-                  <p className="text-xl text-gray-900 mt-1">${recommendedDebtPayoff.toLocaleString()}</p>
-                </div>
-                <div className="rounded-lg border bg-white p-4">
-                  <p className="text-xs text-gray-500">Debt Adjustment</p>
-                  <p className={`text-xl mt-1 ${debtAdjustment > 0 ? "text-green-700" : "text-gray-400"}`}>
-                    {debtAdjustment > 0 ? `+$${debtAdjustment.toLocaleString()}` : "On target"}
-                  </p>
-                </div>
-              </div>
-              <div className="rounded border bg-gray-50 px-4 py-3 text-sm text-gray-700 mb-4">
-                It is recommended that debts are paid off as soon as possible. Applying your remaining funds of ${Math.max(0, adjustedRemainingFunds).toLocaleString()} towards debt brings your recommended monthly debt payoff to ${recommendedDebtPayoff.toLocaleString()}.
-                {(debtInvestingReduction > 0 || debtSavingsReduction > 0) && (
-                  <span className="block mt-1 text-amber-700">
-                    To fully cover your debt contribution, {[
-                      debtInvestingReduction > 0 ? `$${debtInvestingReduction.toLocaleString()} was redirected from investing` : "",
-                      debtSavingsReduction > 0 ? `$${debtSavingsReduction.toLocaleString()} was redirected from savings` : "",
-                    ].filter(Boolean).join(" and ")}.
-                  </span>
-                )}
-              </div>
-              {showDebtBreakdown && (
-                debtRows.length > 0 ? (
-                  <div className="mt-4 space-y-3">
-                    {debtRows.map((row) => (
-                      <div key={row.name}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm text-gray-700">{row.name}</span>
-                          <span className="text-sm text-gray-900">${row.amount.toLocaleString()}</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-red-500 h-2 rounded-full transition-all"
-                            style={{ width: debtBalance > 0 ? `${Math.min((row.amount / debtBalance) * 100, 100)}%` : "0%" }}
-                          />
-                        </div>
-                      </div>
-                    ))}
+            {/* Debt Contribution */}
+            <CategoryCard
+              title="Debt Contribution"
+              current={debtBalance}
+              target="Max"
+              recommended={recommendedDebtPayoff}
+              delta={debtAdjustment}
+              meetsTarget={debtAdjustment >= 0}
+              note={
+                (debtInvestingReduction > 0 || debtSavingsReduction > 0)
+                  ? `To cover debt: ${[
+                      debtInvestingReduction > 0 ? `$${debtInvestingReduction.toLocaleString()} from investing` : "",
+                      debtSavingsReduction > 0 ? `$${debtSavingsReduction.toLocaleString()} from savings` : "",
+                    ].filter(Boolean).join(", ")}`
+                  : undefined
+              }
+            >
+              <BreakdownRows
+                rows={debtRows.map((r) => ({ ...r, color: "bg-red-500" }))}
+                total={debtBalance}
+                show={showDebtBreakdown}
+                toggle={() => setShowDebtBreakdown((v) => !v)}
+              />
+            </CategoryCard>
+
+            {/* Budget Adjustment Summary */}
+            <Card className="p-5 mb-8">
+              <h2 className="text-base font-semibold text-gray-900 mb-3">Adjustment Summary</h2>
+              <div className="divide-y">
+                {adjustmentItems.map(({ name, delta }) => (
+                  <div key={name} className="flex items-center justify-between py-2">
+                    <span className="text-sm text-gray-700">{name}</span>
+                    <span className={`text-sm font-medium ${delta < 0 ? "text-red-600" : delta > 0 ? "text-green-700" : "text-gray-400"}`}>
+                      {delta > 0
+                        ? `+$${delta.toLocaleString()}`
+                        : delta < 0
+                        ? `-$${Math.abs(delta).toLocaleString()}`
+                        : "On target"}
+                    </span>
                   </div>
-                ) : (
-                  <p className="mt-4 text-sm text-gray-500">No debt items found.</p>
-                )
-              )}
+                ))}
+              </div>
             </Card>
           </>
         )}
 
-        {/* Budget Adjustment Summary */}
-        {incomeTotal > 0 && (
-          <Card className="p-6">
-            <h2 className="text-xl text-gray-900 mb-4">Budget Adjustment Summary</h2>
-            <div className="divide-y">
-              {[
-                { name: "Housing / Rent", delta: housingDelta },
-                { name: "Required Expenses", delta: requiredExpensesDelta },
-                { name: "Personal Spending", delta: personalSpendingDelta },
-                { name: "Giving", delta: givingDelta },
-                { name: "Savings", delta: adjustedSavingsDelta },
-                { name: "Investing", delta: adjustedInvestingDelta },
-                { name: "Debt Contribution", delta: debtAdjustment },
-              ].map(({ name, delta }) => (
-                <div key={name} className="flex items-center justify-between py-3">
-                  <span className="text-sm text-gray-700">{name}</span>
-                  <span className={`text-sm font-medium ${delta < 0 ? "text-red-600" : delta > 0 ? "text-green-700" : "text-gray-400"}`}>
-                    {delta > 0
-                      ? `+$${delta.toLocaleString()}`
-                      : delta < 0
-                      ? `-$${Math.abs(delta).toLocaleString()}`
-                      : "On target"}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
-
         {/* Quick Actions */}
-        <div className="grid md:grid-cols-3 gap-6 mt-8">
+        <div className="grid md:grid-cols-3 gap-4">
           <Card
-            className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
+            className="p-5 hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-green-500"
             onClick={() => onCreateBudget?.()}
           >
-            <h3 className="text-lg text-gray-900 mb-2">Create New Budget</h3>
-            <p className="text-sm text-gray-600">Start a new budget template</p>
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">Create New Budget</h3>
+            <p className="text-xs text-gray-600">Start a new budget template</p>
           </Card>
 
-          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <h3 className="text-lg text-gray-900 mb-2">Financial Goals</h3>
-            <p className="text-sm text-gray-600">Set and track your goals</p>
+          <Card className="p-5 hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-blue-500">
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">Financial Goals</h3>
+            <p className="text-xs text-gray-600">Set and track your goals</p>
           </Card>
 
-          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
-            <h3 className="text-lg text-gray-900 mb-2">AI Recommendations</h3>
-            <p className="text-sm text-gray-600">Get personalized insights</p>
+          <Card className="p-5 hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-purple-500">
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">AI Recommendations</h3>
+            <p className="text-xs text-gray-600">Get personalized insights</p>
           </Card>
         </div>
       </div>
