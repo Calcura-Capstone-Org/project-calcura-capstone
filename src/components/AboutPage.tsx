@@ -11,18 +11,19 @@ console.log("API_URL =", API_URL);
 
 export function AboutPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-purple-50">
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Hero Section */}
         <div className="text-center mb-16">
           <div className="flex justify-center mb-6">
-            <img 
-              src={logoImage} 
-              alt="Calcura Logo" 
+            <img
+              src={logoImage}
+              alt="Calcura Logo"
               className="w-24 h-24 object-contain"
             />
           </div>
-          <h1 className="text-4xl text-gray-900 mb-4">About Calcura</h1>
+          <h1 className="text-4xl text-purple-900 mb-4">About Calcura</h1>
+          <div className="w-16 h-1 bg-purple-500 mx-auto rounded-full mb-4" />
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Smart budgeting for every stage of life
           </p>
