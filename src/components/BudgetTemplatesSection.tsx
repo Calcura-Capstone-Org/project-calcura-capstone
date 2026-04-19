@@ -57,10 +57,11 @@ interface BudgetTemplatesSectionProps {
 
 export function BudgetTemplatesSection({ onSelectTemplate }: BudgetTemplatesSectionProps) {
   return (
-    <section id="templates" className="py-20 bg-gray-50">
+    <section id="templates" className="py-20 bg-gradient-to-b from-green-50 to-white">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-12">
-          <h2 className="text-gray-900 mb-4">Budget Templates</h2>
+          <h2 className="text-3xl text-green-900 mb-3">Budget Templates</h2>
+          <div className="w-16 h-1 bg-green-500 mx-auto rounded-full mb-4" />
           <p className="text-gray-600 text-xl">
             Choose the template that matches your life stage
           </p>
