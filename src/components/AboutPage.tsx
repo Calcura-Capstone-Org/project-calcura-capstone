@@ -47,7 +47,7 @@ export function AboutPage() {
             </p>
           </Card>
 
-          <Card className="p-8 bg-gradient-to-br from-purple-50 to-indigo-50 border-l-4 border-l-purple-400">
+          <Card className="p-8 border-l-4 border-l-purple-400">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center shrink-0">
                 <Target className="w-6 h-6 text-white" />
