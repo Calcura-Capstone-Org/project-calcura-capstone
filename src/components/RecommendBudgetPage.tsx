@@ -82,6 +82,85 @@ const renderPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }:
   );
 };
 
+
+// 1. Breakdown row renderer
+const BreakdownRows = ({ rows, total, show, toggle }: { rows: ExpenseRow[]; total: number; show: boolean; toggle: () => void }) => (
+  <>
+    <button type="button" onClick={toggle} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 mt-2">
+      {show ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+      {show ? "Hide" : "Show"} breakdown
+    </button>
+    {show && (
+      rows.length > 0 ? (
+        <div className="mt-3 space-y-2">
+          {rows.map((row) => (
+            <div key={row.name}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-gray-700">{row.name}</span>
+                <span className="text-xs text-gray-900">${row.amount.toLocaleString()}</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div
+                  className={`${row.color} h-1.5 rounded-full transition-all`}
+                  style={{ width: `${total > 0 ? Math.min((row.amount / total) * 100, 100) : 0}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-2 text-xs text-gray-400">No items found.</p>
+      )
+    )}
+  </>
+);
+
+// 2. Category card for each budget section
+const CategoryCard = ({ title, current, target, recommended, delta, meetsTarget, note, children }: {
+  title: string;
+  current: number;
+  target: number | string;
+  recommended: number;
+  delta: number;
+  meetsTarget: boolean;
+  note?: string;
+  children?: React.ReactNode;
+}) => (
+  <Card className="p-5 h-full flex flex-col">
+    <div className="flex items-center justify-between mb-3">
+      <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+      <span className={`text-xs px-2 py-0.5 rounded-full ${meetsTarget ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+        {meetsTarget ? "On target" : "Needs adjustment"}
+      </span>
+    </div>
+    <div className="grid grid-cols-4 gap-3 mb-3">
+      <div className="text-center">
+        <p className="text-[10px] text-gray-500 uppercase">Current</p>
+        <p className="text-lg font-semibold text-gray-900">${current.toLocaleString()}</p>
+      </div>
+      <div className="text-center">
+        <p className="text-[10px] text-gray-500 uppercase">Target</p>
+        <p className="text-lg font-semibold text-gray-900">{typeof target === "string" ? target : `$${target.toLocaleString()}`}</p>
+      </div>
+      <div className="text-center">
+        <p className="text-[10px] text-gray-500 uppercase">Recommended</p>
+        <p className="text-lg font-semibold text-gray-900">${recommended.toLocaleString()}</p>
+      </div>
+      <div className="text-center">
+        <p className="text-[10px] text-gray-500 uppercase">Adjust</p>
+        <p className={`text-lg font-semibold ${delta < 0 ? "text-red-600" : delta > 0 ? "text-amber-600" : "text-green-700"}`}>
+          {delta > 0 ? `+$${delta.toLocaleString()}` : delta < 0 ? `-$${Math.abs(delta).toLocaleString()}` : "$0"}
+        </p>
+      </div>
+    </div>
+    <div className="mt-auto">
+      {note && <p className="text-xs text-amber-700 mb-1">{note}</p>}
+      {children}
+    </div>
+  </Card>
+);
+
+
 export function RecommendBudgetPage({ onCreateBudget }: RecommendBudgetPageProps) {
   const [userName, setUserName] = useState("Guest");
   const [userTemplates, setUserTemplates] = useState<TemplateOption[]>([]);
@@ -427,80 +506,6 @@ export function RecommendBudgetPage({ onCreateBudget }: RecommendBudgetPageProps
     { name: "Debt Contribution", delta: debtAdjustment },
   ];
 
-  // Breakdown row renderer
-  const BreakdownRows = ({ rows, total, show, toggle }: { rows: ExpenseRow[]; total: number; show: boolean; toggle: () => void }) => (
-    <>
-      <button onClick={toggle} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 mt-2">
-        {show ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        {show ? "Hide" : "Show"} breakdown
-      </button>
-      {show && (
-        rows.length > 0 ? (
-          <div className="mt-3 space-y-2">
-            {rows.map((row) => (
-              <div key={row.name}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-gray-700">{row.name}</span>
-                  <span className="text-xs text-gray-900">${row.amount.toLocaleString()}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-1.5">
-                  <div
-                    className={`${row.color} h-1.5 rounded-full transition-all`}
-                    style={{ width: `${total > 0 ? Math.min((row.amount / total) * 100, 100) : 0}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="mt-2 text-xs text-gray-400">No items found.</p>
-        )
-      )}
-    </>
-  );
-
-  // Category card for each budget section
-  const CategoryCard = ({ title, current, target, recommended, delta, meetsTarget, note, children }: {
-    title: string;
-    current: number;
-    target: number | string;
-    recommended: number;
-    delta: number;
-    meetsTarget: boolean;
-    note?: string;
-    children?: React.ReactNode;
-  }) => (
-    <Card className="p-5 mb-4">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-        <span className={`text-xs px-2 py-0.5 rounded-full ${meetsTarget ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
-          {meetsTarget ? "On target" : "Needs adjustment"}
-        </span>
-      </div>
-      <div className="grid grid-cols-4 gap-3 mb-3">
-        <div className="text-center">
-          <p className="text-[10px] text-gray-500 uppercase">Current</p>
-          <p className="text-lg font-semibold text-gray-900">${current.toLocaleString()}</p>
-        </div>
-        <div className="text-center">
-          <p className="text-[10px] text-gray-500 uppercase">Target</p>
-          <p className="text-lg font-semibold text-gray-900">{typeof target === "string" ? target : `$${target.toLocaleString()}`}</p>
-        </div>
-        <div className="text-center">
-          <p className="text-[10px] text-gray-500 uppercase">Recommended</p>
-          <p className="text-lg font-semibold text-gray-900">${recommended.toLocaleString()}</p>
-        </div>
-        <div className="text-center">
-          <p className="text-[10px] text-gray-500 uppercase">Adjust</p>
-          <p className={`text-lg font-semibold ${delta < 0 ? "text-red-600" : delta > 0 ? "text-amber-600" : "text-green-700"}`}>
-            {delta > 0 ? `+$${delta.toLocaleString()}` : delta < 0 ? `-$${Math.abs(delta).toLocaleString()}` : "$0"}
-          </p>
-        </div>
-      </div>
-      {note && <p className="text-xs text-amber-700 mb-1">{note}</p>}
-      {children}
-    </Card>
-  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -542,7 +547,7 @@ export function RecommendBudgetPage({ onCreateBudget }: RecommendBudgetPageProps
         )}
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-4 gap-4 mb-8">
           <Card className="p-5">
             <div className="flex items-center justify-between mb-1">
               <span className="text-xs text-gray-500 uppercase tracking-wide">Income</span>
@@ -649,153 +654,154 @@ export function RecommendBudgetPage({ onCreateBudget }: RecommendBudgetPageProps
         {/* Budget Category Cards */}
         {incomeTotal > 0 && (
           <>
-            <CategoryCard
-              title="Housing / Rent"
-              current={housingExpense}
-              target={housingTarget}
-              recommended={recommendedHousing}
-              delta={housingDelta}
-              meetsTarget={!hasHousingData || housingExpense <= housingTarget}
-            />
-
-            <CategoryCard
-              title="Required Expenses"
-              current={requiredExpensesTotal}
-              target={requiredExpensesTarget}
-              recommended={recommendedRequiredExpenses}
-              delta={requiredExpensesDelta}
-              meetsTarget={requiredExpensesMeetsTarget}
-            >
-              <BreakdownRows
-                rows={expenseRows.filter((e) => !personalSpendingNames.includes(e.name.trim().toLowerCase()) && e.name.trim().toLowerCase() !== "housing/rent")}
-                total={requiredExpensesTotal}
-                show={showExpenseBreakdown}
-                toggle={() => setShowExpenseBreakdown((v) => !v)}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+              <CategoryCard
+                title="Housing / Rent"
+                current={housingExpense}
+                target={housingTarget}
+                recommended={recommendedHousing}
+                delta={housingDelta}
+                meetsTarget={!hasHousingData || housingExpense <= housingTarget}
               />
-            </CategoryCard>
 
-            <CategoryCard
-              title="Personal Spending"
-              current={personalSpendingTotal}
-              target={personalSpendingTarget}
-              recommended={recommendedPersonalSpending}
-              delta={personalSpendingDelta}
-              meetsTarget={personalSpendingMeetsTarget}
-            >
-              <BreakdownRows
-                rows={expenseRows.filter((e) => personalSpendingNames.includes(e.name.trim().toLowerCase()))}
-                total={personalSpendingTotal}
-                show={showPersonalBreakdown}
-                toggle={() => setShowPersonalBreakdown((v) => !v)}
-              />
-            </CategoryCard>
+              <CategoryCard
+                title="Required Expenses"
+                current={requiredExpensesTotal}
+                target={requiredExpensesTarget}
+                recommended={recommendedRequiredExpenses}
+                delta={requiredExpensesDelta}
+                meetsTarget={requiredExpensesMeetsTarget}
+              >
+                <BreakdownRows
+                  rows={expenseRows.filter((e) => !personalSpendingNames.includes(e.name.trim().toLowerCase()) && e.name.trim().toLowerCase() !== "housing/rent")}
+                  total={requiredExpensesTotal}
+                  show={showExpenseBreakdown}
+                  toggle={() => setShowExpenseBreakdown((v) => !v)}
+                />
+              </CategoryCard>
 
-            <CategoryCard
-              title="Giving"
-              current={givingTotal}
-              target={givingTarget}
-              recommended={recommendedGiving}
-              delta={givingDelta}
-              meetsTarget={givingMeetsTarget}
-            >
-              <BreakdownRows
-                rows={givingRows}
-                total={givingTotal}
-                show={showGivingBreakdown}
-                toggle={() => setShowGivingBreakdown((v) => !v)}
-              />
-            </CategoryCard>
+              <CategoryCard
+                title="Personal Spending"
+                current={personalSpendingTotal}
+                target={personalSpendingTarget}
+                recommended={recommendedPersonalSpending}
+                delta={personalSpendingDelta}
+                meetsTarget={personalSpendingMeetsTarget}
+              >
+                <BreakdownRows
+                  rows={expenseRows.filter((e) => personalSpendingNames.includes(e.name.trim().toLowerCase()))}
+                  total={personalSpendingTotal}
+                  show={showPersonalBreakdown}
+                  toggle={() => setShowPersonalBreakdown((v) => !v)}
+                />
+              </CategoryCard>
 
-            <CategoryCard
-              title="Savings"
-              current={savingsTotal}
-              target={savingsTarget}
-              recommended={adjustedRecommendedSavings}
-              delta={adjustedSavingsDelta}
-              meetsTarget={savingsMeetsTarget}
-              note={debtSavingsReduction > 0 ? `$${debtSavingsReduction.toLocaleString()} redirected from savings to cover debt.` : undefined}
-            >
-              <BreakdownRows
-                rows={savingsRows}
-                total={savingsTotal}
-                show={showSavingsBreakdown}
-                toggle={() => setShowSavingsBreakdown((v) => !v)}
-              />
-            </CategoryCard>
+              <CategoryCard
+                title="Giving"
+                current={givingTotal}
+                target={givingTarget}
+                recommended={recommendedGiving}
+                delta={givingDelta}
+                meetsTarget={givingMeetsTarget}
+              >
+                <BreakdownRows
+                  rows={givingRows}
+                  total={givingTotal}
+                  show={showGivingBreakdown}
+                  toggle={() => setShowGivingBreakdown((v) => !v)}
+                />
+              </CategoryCard>
 
-            <CategoryCard
-              title="Investing"
-              current={investingTotal}
-              target={investingTarget}
-              recommended={adjustedRecommendedInvesting}
-              delta={adjustedInvestingDelta}
-              meetsTarget={investingMeetsTarget}
-              note={debtInvestingReduction > 0 ? `$${debtInvestingReduction.toLocaleString()} redirected from investing to cover debt.` : undefined}
-            >
-              <BreakdownRows
-                rows={investingRows}
-                total={investingTotal}
-                show={showInvestingBreakdown}
-                toggle={() => setShowInvestingBreakdown((v) => !v)}
-              />
-            </CategoryCard>
+              <CategoryCard
+                title="Savings"
+                current={savingsTotal}
+                target={savingsTarget}
+                recommended={adjustedRecommendedSavings}
+                delta={adjustedSavingsDelta}
+                meetsTarget={savingsMeetsTarget}
+                note={debtSavingsReduction > 0 ? `$${debtSavingsReduction.toLocaleString()} redirected from savings to cover debt.` : undefined}
+              >
+                <BreakdownRows
+                  rows={savingsRows}
+                  total={savingsTotal}
+                  show={showSavingsBreakdown}
+                  toggle={() => setShowSavingsBreakdown((v) => !v)}
+                />
+              </CategoryCard>
 
-            {/* Remaining Funds */}
-            <Card className="p-5 mb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-semibold text-gray-900">Remaining Funds</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">After all recommended allocations</p>
-                </div>
-                <span className={`text-2xl font-semibold ${adjustedRemainingFunds < 0 ? "text-red-600" : "text-gray-900"}`}>
-                  ${adjustedRemainingFunds.toLocaleString()}
-                </span>
-              </div>
-            </Card>
+              <CategoryCard
+                title="Investing"
+                current={investingTotal}
+                target={investingTarget}
+                recommended={adjustedRecommendedInvesting}
+                delta={adjustedInvestingDelta}
+                meetsTarget={investingMeetsTarget}
+                note={debtInvestingReduction > 0 ? `$${debtInvestingReduction.toLocaleString()} redirected from investing to cover debt.` : undefined}
+              >
+                <BreakdownRows
+                  rows={investingRows}
+                  total={investingTotal}
+                  show={showInvestingBreakdown}
+                  toggle={() => setShowInvestingBreakdown((v) => !v)}
+                />
+              </CategoryCard>
 
-            {/* Debt Contribution */}
-            <CategoryCard
-              title="Debt Contribution"
-              current={debtBalance}
-              target="Max"
-              recommended={recommendedDebtPayoff}
-              delta={debtAdjustment}
-              meetsTarget={debtAdjustment >= 0}
-              note={
-                (debtInvestingReduction > 0 || debtSavingsReduction > 0)
-                  ? `To cover debt: ${[
-                      debtInvestingReduction > 0 ? `$${debtInvestingReduction.toLocaleString()} from investing` : "",
-                      debtSavingsReduction > 0 ? `$${debtSavingsReduction.toLocaleString()} from savings` : "",
-                    ].filter(Boolean).join(", ")}`
-                  : undefined
-              }
-            >
-              <BreakdownRows
-                rows={debtRows.map((r) => ({ ...r, color: "bg-red-500" }))}
-                total={debtBalance}
-                show={showDebtBreakdown}
-                toggle={() => setShowDebtBreakdown((v) => !v)}
-              />
-            </CategoryCard>
+              <CategoryCard
+                title="Debt Contribution"
+                current={debtBalance}
+                target="Max"
+                recommended={recommendedDebtPayoff}
+                delta={debtAdjustment}
+                meetsTarget={debtAdjustment >= 0}
+                note={
+                  (debtInvestingReduction > 0 || debtSavingsReduction > 0)
+                    ? `To cover debt: ${[
+                        debtInvestingReduction > 0 ? `$${debtInvestingReduction.toLocaleString()} from investing` : "",
+                        debtSavingsReduction > 0 ? `$${debtSavingsReduction.toLocaleString()} from savings` : "",
+                      ].filter(Boolean).join(", ")}`
+                    : undefined
+                }
+              >
+                <BreakdownRows
+                  rows={debtRows.map((r) => ({ ...r, color: "bg-red-500" }))}
+                  total={debtBalance}
+                  show={showDebtBreakdown}
+                  toggle={() => setShowDebtBreakdown((v) => !v)}
+                />
+              </CategoryCard>
+            </div>
 
-            {/* Budget Adjustment Summary */}
-            <Card className="p-5 mb-8">
-              <h2 className="text-base font-semibold text-gray-900 mb-3">Adjustment Summary</h2>
-              <div className="divide-y">
-                {adjustmentItems.map(({ name, delta }) => (
-                  <div key={name} className="flex items-center justify-between py-2">
-                    <span className="text-sm text-gray-700">{name}</span>
-                    <span className={`text-sm font-medium ${delta < 0 ? "text-red-600" : delta > 0 ? "text-green-700" : "text-gray-400"}`}>
-                      {delta > 0
-                        ? `+$${delta.toLocaleString()}`
-                        : delta < 0
-                        ? `-$${Math.abs(delta).toLocaleString()}`
-                        : "On target"}
-                    </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              <Card className="p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-semibold text-gray-900">Remaining Funds</h2>
+                    <p className="text-xs text-gray-500 mt-0.5">After all recommended allocations</p>
                   </div>
-                ))}
-              </div>
-            </Card>
+                  <span className={`text-2xl font-semibold ${adjustedRemainingFunds < 0 ? "text-red-600" : "text-gray-900"}`}>
+                    ${adjustedRemainingFunds.toLocaleString()}
+                  </span>
+                </div>
+              </Card>
+
+              <Card className="p-5">
+                <h2 className="text-base font-semibold text-gray-900 mb-3">Adjustment Summary</h2>
+                <div className="divide-y">
+                  {adjustmentItems.map(({ name, delta }) => (
+                    <div key={name} className="flex items-center justify-between py-2">
+                      <span className="text-sm text-gray-700">{name}</span>
+                      <span className={`text-sm font-medium ${delta < 0 ? "text-red-600" : delta > 0 ? "text-green-700" : "text-gray-400"}`}>
+                        {delta > 0
+                          ? `+$${delta.toLocaleString()}`
+                          : delta < 0
+                          ? `-$${Math.abs(delta).toLocaleString()}`
+                          : "On target"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
           </>
         )}
 
