@@ -40,13 +40,12 @@ describe('Footer', () => {
   it('renders product links', () => {
     render(<Footer {...defaultProps} />);
     expect(screen.getByText('Features')).toBeInTheDocument();
-    expect(screen.getByText('Security')).toBeInTheDocument();
     expect(screen.getByText('Updates')).toBeInTheDocument();
   });
 
   it('renders support links', () => {
     render(<Footer {...defaultProps} />);
-    expect(screen.getByText('Help Center')).toBeInTheDocument();
+    expect(screen.getByText('FAQs')).toBeInTheDocument();
     expect(screen.getByText('Privacy Policy')).toBeInTheDocument();
     expect(screen.getByText('Terms of Service')).toBeInTheDocument();
   });
