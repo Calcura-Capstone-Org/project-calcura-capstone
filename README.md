@@ -27,9 +27,9 @@
   pip install -r requirements.txt
   ```
 
-To run the app, use the command: `uvicorn testapp:app --reload`
+To run the app, use the command: `uvicorn main:app --reload`
 
-If this command does not work, use `python -m uvicorn testapp:app --reload` instead
+If this command does not work, use `python -m uvicorn main:app --reload` instead
 
 If nothing wors try `cd project-calcura-capstone` and then run the command again
 

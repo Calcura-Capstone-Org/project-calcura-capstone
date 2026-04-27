@@ -26,7 +26,7 @@ echo ""
 
 # Start backend in background
 echo "Starting backend on http://localhost:8000 ..."
-uvicorn testapp:app --reload &
+uvicorn main:app --reload &
 BACKEND_PID=$!
 
 # Start frontend in foreground
