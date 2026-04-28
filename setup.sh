@@ -26,6 +26,7 @@ echo ""
 
 # Start backend in background
 echo "Starting backend on http://localhost:8000 ..."
+# Modified by Jonathan Torres: renamed testapp -> main
 uvicorn main:app --reload &
 BACKEND_PID=$!
 

@@ -37,6 +37,7 @@ describe('Footer', () => {
     expect(defaultProps.onContactClick).toHaveBeenCalled();
   });
 
+  // Modified by Jonathan Torres: assertions updated to match the current Footer (Security/Help Center removed, FAQs added)
   it('renders product links', () => {
     render(<Footer {...defaultProps} />);
     expect(screen.getByText('Features')).toBeInTheDocument();
