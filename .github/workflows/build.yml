@@ -51,6 +51,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Verify imports
+        # Modified by Jonathan Torres: renamed testapp -> main
         run: python -c "import main; print('Backend imports OK')"
 
   test-frontend:

@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1.7
+# Jonathan Torres wrote 28 lines of code for this file
 
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app

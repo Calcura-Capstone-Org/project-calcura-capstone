@@ -8,6 +8,7 @@ import sqlite3
 import pytest
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
+# Modified by Jonathan Torres: renamed testapp -> main
 from main import app
 
 
