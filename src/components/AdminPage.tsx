@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import logoImage from "../assets/logoImage.png";
 
 const API_URL = import.meta.env.VITE_API_URL;
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
@@ -68,9 +69,9 @@ export function AdminPage() {
 
   // Image Management State
   const [siteImages, setSiteImages] = useState<SiteImage[]>([
-    { id: "1", name: "Hero Background", location: "Landing Page - Hero Section", url: "https://images.unsplash.com/photo-1554224155-6726b3ff858f" },
-    { id: "2", name: "Feature Image 1", location: "Features Section", url: "https://images.unsplash.com/photo-1460925895917-afdab827c52f" },
-    { id: "3", name: "Dashboard Preview", location: "Dashboard Page", url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71" },
+    { id: "1", name: "Calcura Brand Logo", location: "Landing & Site Branding", url: logoImage },
+    { id: "2", name: "Calcura Dashboard Preview", location: "Dashboard Page", url: logoImage },
+    { id: "3", name: "Calcura Hero Visual", location: "Landing Page Hero", url: logoImage },
   ]);
 
   // Dialog States
@@ -371,8 +372,8 @@ export function AdminPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Site Images</CardTitle>
-                    <CardDescription>Manage images used throughout the website</CardDescription>
+                    <CardTitle>Calcura Images</CardTitle>
+                    <CardDescription>Manage Calcura brand and app images used across the site</CardDescription>
                   </div>
                   <Button 
                     onClick={handleAddImage}
