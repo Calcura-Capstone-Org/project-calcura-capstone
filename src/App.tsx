@@ -23,10 +23,49 @@ import { GoalBudget } from "./components/GoalBudget";
 
 type PageView = "landing" | "template" | "manageTemplate" | "login" | "account" | "dashboard" | "recommendBudget" | "about" | "contact" | "signup" | "forgotPassword" | "features" | "admin" | "goalSet" | "goalBudget";
 
+const pathToPage: Record<string, PageView> = {
+  "": "landing",
+  "landing": "landing",
+  "template": "template",
+  "manageTemplate": "manageTemplate",
+  "login": "login",
+  "account": "account",
+  "dashboard": "dashboard",
+  "recommendBudget": "recommendBudget",
+  "about": "about",
+  "contact": "contact",
+  "signup": "signup",
+  "forgotPassword": "forgotPassword",
+  "features": "features",
+  "admin": "admin",
+  "goalSet": "goalSet",
+  "goalBudget": "goalBudget",
+};
+
+const protectedPages = new Set<PageView>([
+  "dashboard",
+  "account",
+  "template",
+  "manageTemplate",
+  "recommendBudget",
+  "admin",
+  "goalSet",
+  "goalBudget",
+]);
+
+function getPageFromPathname(pathname: string): PageView {
+  const normalized = pathname.replace(/^\/+|\/+$/g, "");
+  return pathToPage[normalized] ?? "landing";
+}
+
+function hasActiveSession(): boolean {
+  return Boolean(localStorage.getItem("user_id"));
+}
+
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<PageView>("landing");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState("");
+  const [currentPage, setCurrentPage] = useState<PageView>(() => getPageFromPathname(window.location.pathname));
+  const [isLoggedIn, setIsLoggedIn] = useState(() => hasActiveSession());
+  const [username, setUsername] = useState(() => localStorage.getItem("username") ?? "");
 
   const navigate = (page: PageView) => {
     window.history.pushState({ page }, "", `/${page === "landing" ? "" : page}`);
@@ -35,10 +74,19 @@ export default function App() {
   };
 
   useEffect(() => {
-    window.history.replaceState({ page: "landing" }, "", "/");
+    const loggedIn = hasActiveSession();
+    const storedUsername = localStorage.getItem("username") ?? "";
+    const requestedPage = getPageFromPathname(window.location.pathname);
+    const initialPage = !loggedIn && protectedPages.has(requestedPage) ? "login" : requestedPage;
+
+    setIsLoggedIn(loggedIn);
+    setUsername(storedUsername);
+    setCurrentPage(initialPage);
+    window.history.replaceState({ page: initialPage }, "", `/${initialPage === "landing" ? "" : initialPage}`);
 
     const handlePopState = (e: PopStateEvent) => {
-      const page: PageView = e.state?.page ?? "landing";
+      const requestedPage: PageView = e.state?.page ?? getPageFromPathname(window.location.pathname);
+      const page = !hasActiveSession() && protectedPages.has(requestedPage) ? "login" : requestedPage;
       setCurrentPage(page);
       window.scrollTo(0, 0);
     };
