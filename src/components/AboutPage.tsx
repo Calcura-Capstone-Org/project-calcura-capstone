@@ -115,7 +115,7 @@ export function AboutPage({ isAdmin = false }: AboutPageProps) {
             <p
               className="text-gray-700 leading-relaxed"
               contentEditable={isAdmin}
-              onInput={(e) => handleChange("missionText", e.currentTarget.textContent || "")}
+              onBlur={(e) => handleChange("missionText", e.currentTarget.textContent || "")}
               suppressContentEditableWarning={true}
             >
               {missionText}
@@ -164,7 +164,7 @@ export function AboutPage({ isAdmin = false }: AboutPageProps) {
           <p
             className="text-gray-700 leading-relaxed"
             contentEditable={isAdmin}
-            onInput={(e) => handleChange("whoWeAreText", e.currentTarget.textContent || "")}
+            onBlur={(e) => handleChange("whoWeAreText", e.currentTarget.textContent || "")}
             suppressContentEditableWarning={true}
           >
             {whoWeAreText}
@@ -176,7 +176,7 @@ export function AboutPage({ isAdmin = false }: AboutPageProps) {
           <h2
             className="text-2xl text-purple-900 mb-6 text-center"
             contentEditable={isAdmin}
-            onInput={(e) => handleChange("whyChooseTitle", e.currentTarget.textContent || "")}
+            onBlur={(e) => handleChange("whyChooseTitle", e.currentTarget.textContent || "")}
             suppressContentEditableWarning={true}
           >
             {whyChooseTitle}
