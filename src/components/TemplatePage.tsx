@@ -765,7 +765,7 @@ export function TemplatePage({ onTemplateSaved, isAdmin = false }: TemplatePageP
                         <Label>Expense Type</Label>
                         <Select
                           value={expense.type}
-                          onValueChange={(value) => updateExpense(expense.id, "type", value)}
+                          onValueChange={(value: string) => updateExpense(expense.id, "type", value)}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select expense type" />
@@ -849,7 +849,7 @@ export function TemplatePage({ onTemplateSaved, isAdmin = false }: TemplatePageP
                       <Label>Debt Type</Label>
                       <Select
                         value={debt.type}
-                        onValueChange={(value) => updateDebt(debt.id, "type", value)}
+                        onValueChange={(value: string) => updateDebt(debt.id, "type", value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select debt type" />

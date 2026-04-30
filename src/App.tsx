@@ -22,8 +22,7 @@ import { RecommendBudgetPage } from "./components/RecommendBudgetPage";
 import { AdminPage } from "./components/AdminPage";
 import { GoalSetPage } from "./components/GoalSetPage";
 import { GoalBudget } from "./components/GoalBudget";
-
-type PageView = "landing" | "template" | "manageTemplate" | "login" | "account" | "dashboard" | "recommendBudget" | "about" | "contact" | "privacy" | "terms" | "signup" | "forgotPassword" | "features" | "admin" | "goalSet" | "goalBudget";
+import { hasActiveSession, getPageFromPathname, protectedPages, type PageView } from "./utils/sessionUtils";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<PageView>("landing");
@@ -230,7 +229,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-green-50">
         <Header {...headerProps} activePage="manageTemplate" />
-        <ManageTemplatePage onTemplateSaved={() => navigate("dashboard")} onCreateTemplate={() => navigate("template")} isAdmin={isAdmin} />
+        <ManageTemplatePage onTemplateSaved={() => navigate("dashboard")} onCreateTemplate={() => navigate("template")} />
         <Footer {...footerProps} />
       </div>
     );
