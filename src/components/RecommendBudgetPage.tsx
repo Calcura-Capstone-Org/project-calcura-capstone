@@ -127,7 +127,6 @@ const BreakdownRows = ({ rows, total, show, toggle }: { rows: ExpenseRow[]; tota
 // 2. Category card for each budget section (Dashboard Style)
 const CategoryCard = ({ title, current, target, recommended, delta, meetsTarget, note, icon: Icon, iconColor, barColor, total, children }: any) => {
   
-  // 💡 수정된 부분: 전체 수입(total) 대비 권장 금액(recommended)의 비중으로 정확하게 계산!
   const pct = total > 0 ? Math.min((recommended / total) * 100, 100) : 0;
 
   return (
