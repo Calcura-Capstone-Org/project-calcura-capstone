@@ -14,6 +14,8 @@ import { AccountPage } from "./components/AccountPage";
 import { DashboardPage } from "./components/DashboardPage";
 import { AboutPage } from "./components/AboutPage";
 import { ContactPage } from "./components/ContactPage";
+import { PrivacyPolicy } from "./components/PrivacyPolicy";
+import { TermsOfService } from "./components/TermsOfService";
 import { SignUpPage } from "./components/SignUpPage";
 import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
 import { RecommendBudgetPage } from "./components/RecommendBudgetPage";
@@ -22,12 +24,27 @@ import { GoalSetPage } from "./components/GoalSetPage";
 import { GoalBudget } from "./components/GoalBudget";
 import { FAQPage } from "./components/FAQPage";
 
-type PageView = "landing" | "template" | "manageTemplate" | "login" | "account" | "dashboard" | "recommendBudget" | "about" | "contact" | "signup" | "forgotPassword" | "features" | "admin" | "goalSet" | "goalBudget" | "faq";
+import { hasActiveSession, getPageFromPathname, protectedPages, type PageView as PageViewBase } from "./utils/sessionUtils";
+
+type PageView = PageViewBase | "faq";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<PageView>("landing");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const storedEmail = localStorage.getItem("email") ?? "";
+    const storedUsername = localStorage.getItem("username") ?? "";
+    if (storedEmail || storedUsername) {
+      setIsLoggedIn(true);
+      setUsername(storedUsername);
+      setEmail(storedEmail);
+      setIsAdmin(storedEmail === "admin@calcura.com" || storedUsername === "admin");
+    }
+  }, []);
 
   const navigate = (page: PageView) => {
     window.history.pushState({ page }, "", `/${page === "landing" ? "" : page}`);
@@ -36,10 +53,19 @@ export default function App() {
   };
 
   useEffect(() => {
-    window.history.replaceState({ page: "landing" }, "", "/");
+    const loggedIn = hasActiveSession();
+    const storedUsername = localStorage.getItem("username") ?? "";
+    const requestedPage = getPageFromPathname(window.location.pathname);
+    const initialPage = !loggedIn && protectedPages.has(requestedPage) ? "login" : requestedPage;
+
+    setIsLoggedIn(loggedIn);
+    setUsername(storedUsername);
+    setCurrentPage(initialPage);
+    window.history.replaceState({ page: initialPage }, "", `/${initialPage === "landing" ? "" : initialPage}`);
 
     const handlePopState = (e: PopStateEvent) => {
-      const page: PageView = e.state?.page ?? "landing";
+      const requestedPage: PageView = e.state?.page ?? getPageFromPathname(window.location.pathname);
+      const page = !hasActiveSession() && protectedPages.has(requestedPage) ? "login" : requestedPage;
       setCurrentPage(page);
       window.scrollTo(0, 0);
     };
@@ -50,7 +76,11 @@ export default function App() {
 
   const handleLogin = () => {
     setIsLoggedIn(true);
-    setUsername(localStorage.getItem("username") ?? "");
+    const storedUsername = localStorage.getItem("username") ?? "";
+    const storedEmail = localStorage.getItem("email") ?? "";
+    setUsername(storedUsername);
+    setEmail(storedEmail);
+    setIsAdmin(storedEmail === "admin@calcura.com" || storedUsername === "admin");
     navigate("dashboard");
   };
 
@@ -104,6 +134,7 @@ export default function App() {
     onFeaturesClick: () => navigate("features"),
     isLoggedIn,
     username,
+    isAdmin,
     onAdminClick: () => navigate("admin"),
     onFAQClick: () => navigate("faq"),
   };
@@ -112,6 +143,8 @@ export default function App() {
     onAboutClick: () => navigate("about"),
     onContactClick: () => navigate("contact"),
     onFAQClick: () => navigate("faq"),
+    onPrivacyClick: () => navigate("privacy"),
+    onTermsClick: () => navigate("terms"),
   };
 
   if (currentPage === "dashboard") {
@@ -152,7 +185,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-purple-50">
         <Header {...headerProps} activePage="about" />
-        <AboutPage />
+        <AboutPage isAdmin={isAdmin} />
         <Footer {...footerProps} />
       </div>
     );
@@ -162,7 +195,27 @@ export default function App() {
     return (
       <div className="min-h-screen bg-teal-50">
         <Header {...headerProps} activePage="contact" />
-        <ContactPage />
+        <ContactPage isAdmin={isAdmin} />
+        <Footer {...footerProps} />
+      </div>
+    );
+  }
+
+  if (currentPage === "privacy") {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header {...headerProps} />
+        <PrivacyPolicy />
+        <Footer {...footerProps} />
+      </div>
+    );
+  }
+
+  if (currentPage === "terms") {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header {...headerProps} />
+        <TermsOfService />
         <Footer {...footerProps} />
       </div>
     );
@@ -172,7 +225,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-green-50">
         <Header {...headerProps} activePage="template" />
-        <TemplatePage onTemplateSaved={() => navigate("dashboard")} />
+        <TemplatePage onTemplateSaved={() => navigate("dashboard")} isAdmin={isAdmin} />
         <Footer {...footerProps} />
       </div>
     );
@@ -192,7 +245,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-blue-50">
         <Header {...headerProps} activePage="features" />
-        <FeaturesPage onRecommendBudgetClick={() => navigate("recommendBudget")} onGoalSettingClick={() => navigate("goalSet")} onGoalSeekClick={() => navigate("goalBudget")} />
+        <FeaturesPage onRecommendBudgetClick={() => navigate("recommendBudget")} onGoalSettingClick={() => navigate("goalSet")} onGoalSeekClick={() => navigate("goalBudget")} isAdmin={isAdmin} />
         <Footer {...footerProps} />
       </div>
     );
@@ -241,9 +294,9 @@ if (currentPage === "faq") {
   return (
     <div className="min-h-screen bg-white">
       <Header {...headerProps} />
-      <HeroSection />
-      <FeaturesSection />
-      <BudgetTemplatesSection onSelectTemplate={() => navigate("template")} />
+      <HeroSection isAdmin={isAdmin} />
+      <FeaturesSection isAdmin={isAdmin} />
+      <BudgetTemplatesSection onSelectTemplate={() => navigate("template")} isAdmin={isAdmin} />
       <Footer {...footerProps} />
       <FeedbackButton />
     </div>

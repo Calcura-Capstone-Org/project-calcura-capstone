@@ -1,6 +1,6 @@
 /* Jonathan Torres wrote the original version of this file */
 /* Jonathan Torres updated the UI styling and condensed the layout */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -20,10 +20,18 @@ interface FaqItem {
   a: string;
 }
 
+interface ContactPageProps {
+  isAdmin?: boolean;
+}
+
 // FAQ entries will be added here
 const faqs: FaqItem[] = [];
 
-export function ContactPage() {
+export function ContactPage({ isAdmin = false }: ContactPageProps) {
+  const [contactTitle, setContactTitle] = useState("Contact Us");
+  const [contactSubtitle, setContactSubtitle] = useState("Have a question or feedback? We'd love to hear from you.");
+  const [formTitle, setFormTitle] = useState("Send us a Message");
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -31,6 +39,22 @@ export function ContactPage() {
     message: ""
   });
   const [expandFaq, setExpandFaq] = useState(false);
+
+  useEffect(() => {
+    const savedTitle = localStorage.getItem("contactTitle");
+    const savedSubtitle = localStorage.getItem("contactSubtitle");
+    const savedFormTitle = localStorage.getItem("contactFormTitle");
+    if (savedTitle) setContactTitle(savedTitle);
+    if (savedSubtitle) setContactSubtitle(savedSubtitle);
+    if (savedFormTitle) setFormTitle(savedFormTitle);
+  }, []);
+
+  const handleTitleChange = (key: string, value: string) => {
+    localStorage.setItem(key, value);
+    if (key === "contactTitle") setContactTitle(value);
+    else if (key === "contactSubtitle") setContactSubtitle(value);
+    else if (key === "contactFormTitle") setFormTitle(value);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,10 +82,22 @@ export function ContactPage() {
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Header */}
         <div className="text-center mb-10">
-          <h1 className="text-4xl text-teal-900 mb-3">Contact Us</h1>
+          <h1
+            className="text-4xl text-teal-900 mb-3"
+            contentEditable={isAdmin}
+            onBlur={(e) => handleTitleChange("contactTitle", e.currentTarget.textContent || "")}
+            suppressContentEditableWarning={true}
+          >
+            {contactTitle}
+          </h1>
           <div className="w-16 h-1 bg-teal-500 mx-auto rounded-full mb-3" />
-          <p className="text-lg text-gray-600 max-w-xl mx-auto">
-            Have a question or feedback? We'd love to hear from you.
+          <p
+            className="text-lg text-gray-600 max-w-xl mx-auto"
+            contentEditable={isAdmin}
+            onBlur={(e) => handleTitleChange("contactSubtitle", e.currentTarget.textContent || "")}
+            suppressContentEditableWarning={true}
+          >
+            {contactSubtitle}
           </p>
         </div>
 
@@ -120,7 +156,14 @@ export function ContactPage() {
           {/* Contact Form */}
           <div className="lg:col-span-2">
             <Card className="p-8">
-              <h2 className="text-2xl text-gray-900 mb-6">Send us a Message</h2>
+              <h2
+                className="text-2xl text-gray-900 mb-6"
+                contentEditable={isAdmin}
+                onBlur={(e) => handleTitleChange("contactFormTitle", e.currentTarget.textContent || "")}
+                suppressContentEditableWarning={true}
+              >
+                {formTitle}
+              </h2>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">

@@ -11,9 +11,11 @@ interface FooterProps {
   onAboutClick?: () => void;
   onContactClick?: () => void;
   onFAQClick?: () => void;
+  onPrivacyClick?: () => void;
+  onTermsClick?: () => void;
 }
 
-export function Footer({ onAboutClick, onContactClick, onFAQClick }: FooterProps) {
+export function Footer({ onAboutClick, onContactClick, onFAQClick, onPrivacyClick, onTermsClick }: FooterProps) {
   return (
     <footer className="bg-white border-t py-12">
       <div className="max-w-7xl mx-auto px-6">
@@ -59,8 +61,22 @@ export function Footer({ onAboutClick, onContactClick, onFAQClick }: FooterProps
                   FAQs
                 </button>
               </li>
-              <li><a href="#" className="text-gray-600 hover:text-gray-900">Privacy Policy</a></li>
-              <li><a href="#" className="text-gray-600 hover:text-gray-900">Terms of Service</a></li>
+              <li>
+                <button
+                  onClick={onPrivacyClick}
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Privacy Policy
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={onTermsClick}
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Terms of Service
+                </button>
+              </li>
             </ul>
           </div>
           

@@ -74,6 +74,7 @@ export function AccountPage() {
       alert("Account deleted successfully.");
       localStorage.removeItem("user_id");
       localStorage.removeItem("email");
+      localStorage.removeItem("username");
       window.location.href = "/";
     } catch (err) {
       console.error("Delete account network error", err);
@@ -84,6 +85,7 @@ export function AccountPage() {
   const handleSignOut = () => {
     localStorage.removeItem("user_id");
     localStorage.removeItem("email");
+    localStorage.removeItem("username");
     alert("Signed out successfully.");
     window.location.href = "/";
   };

@@ -6,7 +6,8 @@
         "moduleResolution": "Node",
         "strict": true,
         "jsx": "react-jsx",
-        "types": ["vite/client", "vitest/globals"]
+        "types": ["vite/client", "vitest/globals"],
+        "ignoreDeprecations": "6.0"
     },
     "include": ["src"]
 }

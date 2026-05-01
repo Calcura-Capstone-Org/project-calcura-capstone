@@ -1,5 +1,6 @@
 /* Jaren Schneider wrote the original version of this file */
 /* Jonathan Torres updated the UI styling and condensed the layout */
+import { useState, useEffect } from "react";
 import { Card } from "./ui/card";
 import { Target, Users, Heart, TrendingUp, Shield, Lightbulb, BarChart3, Calculator, Zap, CreditCard } from "lucide-react";
 import logoImage from "../assets/logoImage.png";
@@ -19,17 +20,69 @@ const features = [
   { icon: Heart, label: "User-Friendly Interface" },
 ];
 
-export function AboutPage() {
+interface AboutPageProps {
+  isAdmin?: boolean;
+}
+
+export function AboutPage({ isAdmin = false }: AboutPageProps) {
+  const [aboutTitle, setAboutTitle] = useState("About Calcura");
+  const [aboutSubtitle, setAboutSubtitle] = useState("Smart budgeting for every stage of life");
+  const [whatWeDoText, setWhatWeDoText] = useState("Calcura helps individuals take control of their finances through intelligent budgeting and personalized insights. Our platform combines AI-driven recommendations with templates tailored to three life stages: Youth, Career, and Retirement.");
+  const [missionText, setMissionText] = useState("Democratize financial planning by providing accessible, intelligent budgeting tools that empower everyone to achieve their financial goals — completely free of charge.");
+  const [whoWeAreText, setWhoWeAreText] = useState("Calcura was built by a team of financial experts, developers, and designers who believe everyone deserves smart money management tools. We combine expertise in finance, AI, and human-centered design to create a platform that's powerful yet approachable — and we're constantly improving based on user feedback.");
+  const [whyChooseTitle, setWhyChooseTitle] = useState("Why Choose Calcura?");
+
+  useEffect(() => {
+    const keys = ["aboutTitle", "aboutSubtitle", "whatWeDoText", "missionText", "whoWeAreText", "whyChooseTitle"];
+    keys.forEach(key => {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        switch (key) {
+          case "aboutTitle": setAboutTitle(saved); break;
+          case "aboutSubtitle": setAboutSubtitle(saved); break;
+          case "whatWeDoText": setWhatWeDoText(saved); break;
+          case "missionText": setMissionText(saved); break;
+          case "whoWeAreText": setWhoWeAreText(saved); break;
+          case "whyChooseTitle": setWhyChooseTitle(saved); break;
+        }
+      }
+    });
+  }, []);
+
+  const handleChange = (key: string, value: string) => {
+    localStorage.setItem(key, value);
+    switch (key) {
+      case "aboutTitle": setAboutTitle(value); break;
+      case "aboutSubtitle": setAboutSubtitle(value); break;
+      case "whatWeDoText": setWhatWeDoText(value); break;
+      case "missionText": setMissionText(value); break;
+      case "whoWeAreText": setWhoWeAreText(value); break;
+      case "whyChooseTitle": setWhyChooseTitle(value); break;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-purple-50">
       <div className="max-w-7xl mx-auto px-6 py-16">
         {/* Hero */}
         <div className="text-center mb-16">
           <img src={logoImage} alt="Calcura Logo" className="w-24 h-24 object-contain mx-auto mb-5" />
-          <h1 className="text-4xl text-purple-900 mb-4">About Calcura</h1>
+          <h1
+            className="text-4xl text-purple-900 mb-4"
+            contentEditable={isAdmin}
+            onBlur={(e) => handleChange("aboutTitle", e.currentTarget.textContent || "")}
+            suppressContentEditableWarning={true}
+          >
+            {aboutTitle}
+          </h1>
           <div className="w-16 h-1 bg-purple-500 mx-auto rounded-full mb-4" />
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Smart budgeting for every stage of life
+          <p
+            className="text-xl text-gray-600 max-w-2xl mx-auto"
+            contentEditable={isAdmin}
+            onBlur={(e) => handleChange("aboutSubtitle", e.currentTarget.textContent || "")}
+            suppressContentEditableWarning={true}
+          >
+            {aboutSubtitle}
           </p>
         </div>
 
@@ -42,8 +95,13 @@ export function AboutPage() {
               </div>
               <h2 className="text-2xl text-gray-900">What We Do</h2>
             </div>
-            <p className="text-gray-700 leading-relaxed">
-              Calcura helps individuals take control of their finances through intelligent budgeting and personalized insights. Our platform combines AI-driven recommendations with templates tailored to three life stages: Youth, Career, and Retirement.
+            <p
+              className="text-gray-700 leading-relaxed"
+              contentEditable={isAdmin}
+              onBlur={(e) => handleChange("whatWeDoText", e.currentTarget.textContent || "")}
+              suppressContentEditableWarning={true}
+            >
+              {whatWeDoText}
             </p>
           </Card>
 
@@ -54,8 +112,13 @@ export function AboutPage() {
               </div>
               <h2 className="text-2xl text-gray-900">Our Mission</h2>
             </div>
-            <p className="text-gray-700 leading-relaxed">
-              Democratize financial planning by providing accessible, intelligent budgeting tools that empower everyone to achieve their financial goals — completely free of charge.
+            <p
+              className="text-gray-700 leading-relaxed"
+              contentEditable={isAdmin}
+              onBlur={(e) => handleChange("missionText", e.currentTarget.textContent || "")}
+              suppressContentEditableWarning={true}
+            >
+              {missionText}
             </p>
           </Card>
         </div>
@@ -98,14 +161,26 @@ export function AboutPage() {
             </div>
             <h2 className="text-2xl text-gray-900">Who We Are</h2>
           </div>
-          <p className="text-gray-700 leading-relaxed">
-            Calcura was built by a team of financial experts, developers, and designers who believe everyone deserves smart money management tools. We combine expertise in finance, AI, and human-centered design to create a platform that's powerful yet approachable — and we're constantly improving based on user feedback.
+          <p
+            className="text-gray-700 leading-relaxed"
+            contentEditable={isAdmin}
+            onBlur={(e) => handleChange("whoWeAreText", e.currentTarget.textContent || "")}
+            suppressContentEditableWarning={true}
+          >
+            {whoWeAreText}
           </p>
         </Card>
 
         {/* Why Choose Calcura */}
         <Card className="p-8 border-l-4 border-l-purple-400">
-          <h2 className="text-2xl text-purple-900 mb-6 text-center">Why Choose Calcura?</h2>
+          <h2
+            className="text-2xl text-purple-900 mb-6 text-center"
+            contentEditable={isAdmin}
+            onBlur={(e) => handleChange("whyChooseTitle", e.currentTarget.textContent || "")}
+            suppressContentEditableWarning={true}
+          >
+            {whyChooseTitle}
+          </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
             {features.map((feature) => {
               const Icon = feature.icon;
