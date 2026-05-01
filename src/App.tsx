@@ -20,8 +20,9 @@ import { RecommendBudgetPage } from "./components/RecommendBudgetPage";
 import { AdminPage } from "./components/AdminPage";
 import { GoalSetPage } from "./components/GoalSetPage";
 import { GoalBudget } from "./components/GoalBudget";
+import { FAQPage } from "./components/FAQPage";
 
-type PageView = "landing" | "template" | "manageTemplate" | "login" | "account" | "dashboard" | "recommendBudget" | "about" | "contact" | "signup" | "forgotPassword" | "features" | "admin" | "goalSet" | "goalBudget";
+type PageView = "landing" | "template" | "manageTemplate" | "login" | "account" | "dashboard" | "recommendBudget" | "about" | "contact" | "signup" | "forgotPassword" | "features" | "admin" | "goalSet" | "goalBudget" | "faq";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<PageView>("landing");
@@ -104,11 +105,13 @@ export default function App() {
     isLoggedIn,
     username,
     onAdminClick: () => navigate("admin"),
+    onFAQClick: () => navigate("faq"),
   };
 
   const footerProps = {
     onAboutClick: () => navigate("about"),
     onContactClick: () => navigate("contact"),
+    onFAQClick: () => navigate("faq"),
   };
 
   if (currentPage === "dashboard") {
@@ -220,6 +223,16 @@ export default function App() {
       <div className="min-h-screen bg-white">
         <Header {...headerProps} />
         <AdminPage />
+        <Footer {...footerProps} />
+      </div>
+    );
+  }
+
+if (currentPage === "faq") {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header {...headerProps} />
+        <FAQPage onContactClick={() => navigate("contact")} />  
         <Footer {...footerProps} />
       </div>
     );

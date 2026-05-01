@@ -10,9 +10,10 @@ console.log("API_URL =", API_URL);
 interface FooterProps {
   onAboutClick?: () => void;
   onContactClick?: () => void;
+  onFAQClick?: () => void;
 }
 
-export function Footer({ onAboutClick, onContactClick }: FooterProps) {
+export function Footer({ onAboutClick, onContactClick, onFAQClick }: FooterProps) {
   return (
     <footer className="bg-white border-t py-12">
       <div className="max-w-7xl mx-auto px-6">
@@ -50,7 +51,14 @@ export function Footer({ onAboutClick, onContactClick }: FooterProps) {
                   Contact Us
                 </button>
               </li>
-              <li><a href="#" className="text-gray-600 hover:text-gray-900">FAQs</a></li>
+              <li>
+                <button 
+                  onClick={onFAQClick}
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  FAQs
+                </button>
+              </li>
               <li><a href="#" className="text-gray-600 hover:text-gray-900">Privacy Policy</a></li>
               <li><a href="#" className="text-gray-600 hover:text-gray-900">Terms of Service</a></li>
             </ul>

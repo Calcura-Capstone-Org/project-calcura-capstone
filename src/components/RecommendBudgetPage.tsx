@@ -1,6 +1,6 @@
 /* Jaehyeong Shin wrote the original version of this file */
 /* Jonathan Torres updated the UI styling and added Recharts visualizations */
-/* Dashboard styling applied to RecommendBudgetPage */
+/* Dashboard styling applied to RecommendBudgetPage - TS Errors Fixed */
 
 import { useEffect, useState } from "react";
 import { Card } from "./ui/card";
@@ -370,31 +370,40 @@ export function RecommendBudgetPage({ onCreateBudget, onFinancialGoals, onManage
     }
   };
 
-  // Calculation Logic (UNCHANGED)
+  // 💡 TS 에러 완벽 수정 부분: String(value || "").trim().toLowerCase() 로 안전하게 처리
   const totalExpenses = expenseRows.reduce((sum, item) => sum + item.amount, 0);
   const debtBalance = debtRows.reduce((sum, item) => sum + item.amount, 0);
-  const housingExpense = expenseRows.find((expense) => expense.name.trim().toLowerCase() === "housing/rent")?.amount ?? 0;
+  
+  const housingExpense = expenseRows.find((expense) => String(expense.name || "").trim().toLowerCase() === "housing/rent")?.amount ?? 0;
   const housingTarget = roundToCents(incomeTotal * 0.25);
   const recommendedHousing = housingExpense > 0 && housingExpense < housingTarget ? housingExpense : housingTarget;
   const housingDelta = roundToCents(recommendedHousing - housingExpense);
   const hasHousingData = housingExpense > 0;
+  
   const givingTarget = roundToCents(incomeTotal * 0.1);
   const recommendedGiving = givingTotal > givingTarget ? givingTotal : givingTarget;
   const givingDelta = roundToCents(recommendedGiving - givingTotal);
   const givingMeetsTarget = givingTotal >= givingTarget;
+  
   const savingsTarget = roundToCents(incomeTotal * 0.1);
   const recommendedSavings = savingsTotal > savingsTarget ? savingsTotal : savingsTarget;
   const savingsMeetsTarget = savingsTotal >= savingsTarget;
+  
   const investingTarget = roundToCents(incomeTotal * 0.1);
   const rawRecommendedInvesting = investingTotal > investingTarget ? investingTotal : investingTarget;
   const investingMeetsTarget = investingTotal >= investingTarget;
+  
   const personalSpendingNames = ["entertainment", "dining out"];
-  const personalSpendingTotal = roundToCents(expenseRows.filter((expense) => personalSpendingNames.includes(expense.name.trim().toLowerCase())).reduce((sum, expense) => sum + expense.amount, 0));
+  const personalSpendingTotal = roundToCents(expenseRows.filter((expense) => personalSpendingNames.includes(String(expense.name || "").trim().toLowerCase())).reduce((sum, expense) => sum + expense.amount, 0));
   const personalSpendingTarget = roundToCents(incomeTotal * 0.03);
   const recommendedPersonalSpending = personalSpendingTotal > personalSpendingTarget ? personalSpendingTarget : personalSpendingTotal;
   const personalSpendingDelta = roundToCents(recommendedPersonalSpending - personalSpendingTotal);
   const personalSpendingMeetsTarget = personalSpendingTotal <= personalSpendingTarget;
-  const requiredExpensesTotal = roundToCents(expenseRows.filter((expense) => { const name = expense.name.trim().toLowerCase(); return name !== "housing/rent" && !personalSpendingNames.includes(name); }).reduce((sum, expense) => sum + expense.amount, 0));
+  
+  const requiredExpensesTotal = roundToCents(expenseRows.filter((expense) => { 
+    const name = String(expense.name || "").trim().toLowerCase(); 
+    return name !== "housing/rent" && !personalSpendingNames.includes(name); 
+  }).reduce((sum, expense) => sum + expense.amount, 0));
   const requiredExpensesTarget = roundToCents(incomeTotal * 0.25);
   const recommendedRequiredExpenses = requiredExpensesTotal > requiredExpensesTarget ? requiredExpensesTarget : requiredExpensesTotal;
   const requiredExpensesDelta = roundToCents(recommendedRequiredExpenses - requiredExpensesTotal);
@@ -582,7 +591,7 @@ export function RecommendBudgetPage({ onCreateBudget, onFinancialGoals, onManage
                 icon={CreditCard} iconColor="text-rose-500" barColor="#ef4444"
                 total={incomeTotal}
               >
-                <BreakdownRows rows={expenseRows.filter((e) => !personalSpendingNames.includes(e.name.trim().toLowerCase()) && e.name.trim().toLowerCase() !== "housing/rent")} total={requiredExpensesTotal} show={showExpenseBreakdown} toggle={() => setShowExpenseBreakdown((v) => !v)} />
+                <BreakdownRows rows={expenseRows.filter((e) => String(e.name || "").trim().toLowerCase() !== "housing/rent" && !personalSpendingNames.includes(String(e.name || "").trim().toLowerCase()))} total={requiredExpensesTotal} show={showExpenseBreakdown} toggle={() => setShowExpenseBreakdown((v) => !v)} />
               </CategoryCard>
 
               <CategoryCard
@@ -590,7 +599,7 @@ export function RecommendBudgetPage({ onCreateBudget, onFinancialGoals, onManage
                 icon={Target} iconColor="text-orange-500" barColor="#f97316"
                 total={incomeTotal}
               >
-                <BreakdownRows rows={expenseRows.filter((e) => personalSpendingNames.includes(e.name.trim().toLowerCase()))} total={personalSpendingTotal} show={showPersonalBreakdown} toggle={() => setShowPersonalBreakdown((v) => !v)} />
+                <BreakdownRows rows={expenseRows.filter((e) => personalSpendingNames.includes(String(e.name || "").trim().toLowerCase()))} total={personalSpendingTotal} show={showPersonalBreakdown} toggle={() => setShowPersonalBreakdown((v) => !v)} />
               </CategoryCard>
 
               <CategoryCard
