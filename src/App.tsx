@@ -26,6 +26,13 @@ import { FAQPage } from "./components/FAQPage";
 
 import { hasActiveSession, getPageFromPathname, protectedPages, type PageView as PageViewBase } from "./utils/sessionUtils";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
+interface UserRoleApiResponse {
+  user_id?: number | string;
+  role_id?: number | string;
+}
+
 type PageView = PageViewBase | "faq";
 
 export default function App() {
@@ -35,14 +42,35 @@ export default function App() {
   const [email, setEmail] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
 
+  const refreshAdminStatus = async (userId: string | null) => {
+    if (!userId) {
+      setIsAdmin(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/user_roles/`);
+      if (!res.ok) throw new Error("Failed to fetch user roles");
+
+      const userRoles: UserRoleApiResponse[] = await res.json();
+      const hasAdminRole = userRoles.some(
+        (ur) => String(ur.user_id) === String(userId) && Number(ur.role_id) === 5
+      );
+      setIsAdmin(hasAdminRole);
+    } catch {
+      setIsAdmin(false);
+    }
+  };
+
   useEffect(() => {
     const storedEmail = localStorage.getItem("email") ?? "";
     const storedUsername = localStorage.getItem("username") ?? "";
+    const storedUserId = localStorage.getItem("user_id");
     if (storedEmail || storedUsername) {
       setIsLoggedIn(true);
       setUsername(storedUsername);
       setEmail(storedEmail);
-      setIsAdmin(storedEmail === "admin@calcura.com" || storedUsername === "admin");
+      void refreshAdminStatus(storedUserId);
     }
   }, []);
 
@@ -78,9 +106,10 @@ export default function App() {
     setIsLoggedIn(true);
     const storedUsername = localStorage.getItem("username") ?? "";
     const storedEmail = localStorage.getItem("email") ?? "";
+    const storedUserId = localStorage.getItem("user_id");
     setUsername(storedUsername);
     setEmail(storedEmail);
-    setIsAdmin(storedEmail === "admin@calcura.com" || storedUsername === "admin");
+    void refreshAdminStatus(storedUserId);
     navigate("dashboard");
   };
 

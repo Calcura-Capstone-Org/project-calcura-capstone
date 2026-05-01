@@ -16,6 +16,17 @@ console.log("API_URL =", API_URL);
 export function AccountPage() {
   const [name, setName] = useState("John Doe");
   const [email, setEmail] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const nameParts = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  const profileInitials =
+    nameParts.length >= 2
+      ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase()
+      : (nameParts[0]?.slice(0, 2).toUpperCase() || "U");
 
   useEffect(() => {
     const userEmail = localStorage.getItem("email");
@@ -125,6 +136,51 @@ export function AccountPage() {
     }
   };
 
+  const handleChangePassword = async () => {
+    const userId = localStorage.getItem("user_id");
+    if (!userId) {
+      alert("No active user found. Please log in again.");
+      return;
+    }
+
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      alert("Please fill in all password fields.");
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      alert("New password and confirm password do not match.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/users/${userId}/password`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        alert(`Unable to change password: ${errorData?.detail || response.statusText}`);
+        return;
+      }
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      alert("Password changed successfully.");
+    } catch (error) {
+      console.error("Network error changing password", error);
+      alert("Network error while changing password. Please try again.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-6 py-8">
@@ -178,7 +234,7 @@ export function AccountPage() {
                 <Avatar className="w-20 h-20">
                   <AvatarImage src="" />
                   <AvatarFallback className="bg-green-100 text-green-700 text-2xl">
-                    JD
+                    {profileInitials}
                   </AvatarFallback>
                 </Avatar>
               </div>
@@ -211,6 +267,53 @@ export function AccountPage() {
                   </Button>
                   <Button variant="outline">
                     Cancel
+                  </Button>
+                </div>
+              </div>
+            </Card>
+
+            {/* Change Password Card */}
+            <Card className="p-6">
+              <h2 className="text-xl text-gray-900 mb-1">Change Password</h2>
+              <p className="text-sm text-gray-600 mb-4">Update your password to keep your account secure</p>
+
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="currentPassword">Current Password</Label>
+                  <Input
+                    id="currentPassword"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
+                  <Input
+                    id="confirmNewPassword"
+                    type="password"
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div className="pt-2">
+                  <Button className="bg-green-600 hover:bg-green-700" onClick={handleChangePassword}>
+                    Change Password
                   </Button>
                 </div>
               </div>

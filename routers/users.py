@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import Optional
 from databasev1 import get_connection
 import hashlib
+import re
 import time
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -18,6 +19,20 @@ class UserCreate(BaseModel):
 #Helper Functions
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
+
+
+def is_valid_password(password: str) -> bool:
+    if len(password) < 14:
+        return False
+    if not re.search(r"[A-Za-z]", password):
+        return False
+    if not re.search(r"[A-Z]", password):
+        return False
+    if not re.search(r"\d", password):
+        return False
+    if not re.search(r"[^A-Za-z0-9]", password):
+        return False
+    return True
 
 def now_timestamp() -> str:
     return time.strftime("%Y-%m-%d %H:%M:%S")
@@ -34,6 +49,13 @@ def list_users():
 @router.post("/")
 def create_user(user: UserCreate):
     conn = get_connection()
+
+    if not is_valid_password(user.password):
+        conn.close()
+        raise HTTPException(
+            status_code=400,
+            detail="Password must be at least 14 characters and include at least one letter, one uppercase letter, one number, and one symbol",
+        )
 
     # Prevent race conditions and ensure consistent id assignment.
     # SQLite: use immediate transaction before SELECT/INSERT for write operations.
@@ -71,6 +93,10 @@ def create_user(user: UserCreate):
 class UserUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
 
 @router.delete("/{user_id}")
 def delete_user(user_id: int):
@@ -145,6 +171,36 @@ def update_user(user_id: int, user: UserUpdate):
     conn.close()
 
     return {"message": "User updated successfully", "user_id": user_id}
+
+@router.put("/{user_id}/password")
+def change_password(user_id: int, data: ChangePasswordRequest):
+    conn = get_connection()
+    existing_user = conn.execute("SELECT * FROM Users WHERE user_id = ?", (user_id,)).fetchone()
+    if not existing_user:
+        conn.close()
+        raise HTTPException(status_code=404, detail="User not found")
+
+    current_hash = hash_password(data.current_password)
+    if current_hash != existing_user["password_hash"]:
+        conn.close()
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+
+    if not is_valid_password(data.new_password):
+        conn.close()
+        raise HTTPException(
+            status_code=400,
+            detail="Password must be at least 14 characters and include at least one letter, one uppercase letter, one number, and one symbol",
+        )
+
+    new_hash = hash_password(data.new_password)
+    conn.execute(
+        "UPDATE Users SET password_hash = ?, updated_on = ? WHERE user_id = ?",
+        (new_hash, now_timestamp(), user_id),
+    )
+    conn.commit()
+    conn.close()
+
+    return {"message": "Password changed successfully", "user_id": user_id}
 
 # Login Endpoint
 
