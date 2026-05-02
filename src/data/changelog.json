@@ -1,0 +1,18 @@
+{
+  "version": "0.1.0",
+  "released_at": "2026-05-02",
+  "show_until": "2026-05-16",
+  "entries": [
+    {
+      "version": "0.1.0",
+      "released_at": "2026-05-02",
+      "title": "What's New page",
+      "sections": {
+        "Added": [
+          "Public changelog at /changelog so users can see what's shipped in each release.",
+          "Footer link surfaces the latest updates."
+        ]
+      }
+    }
+  ]
+}

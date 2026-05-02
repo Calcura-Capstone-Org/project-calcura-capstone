@@ -74,6 +74,12 @@ def create_user(user: UserCreate):
     except Exception:
         pass
 
+    # Ensure last_login column exists on Users table
+    try:
+        conn.execute("ALTER TABLE Users ADD COLUMN last_login TIMESTAMP")
+    except Exception:
+        pass
+
     # Get next available user_id from existing rows
     result = conn.execute("SELECT MAX(user_id) AS max_id FROM Users").fetchone()
     max_id = result["max_id"] if result is not None and result["max_id"] is not None else 0
@@ -83,8 +89,8 @@ def create_user(user: UserCreate):
     timestamp = now_timestamp()
 
     conn.execute(
-        "INSERT INTO Users (user_id, name, email, password_hash, mfa_secret, age, is_active, created_on, updated_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (next_user_id, user.name, user.email, password_hash, None, user.age, 1, timestamp, timestamp)
+        "INSERT INTO Users (user_id, name, email, password_hash, mfa_secret, age, is_active, created_on, updated_on, last_login) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (next_user_id, user.name, user.email, password_hash, None, user.age, 1, timestamp, timestamp, timestamp)
     )
     conn.commit()
     conn.close()
@@ -212,6 +218,12 @@ class LoginRequest(BaseModel):
 def login(data: LoginRequest):
     conn = get_connection()
 
+    # Ensure last_login column exists on Users table (safe if already present)
+    try:
+        conn.execute("ALTER TABLE Users ADD COLUMN last_login TIMESTAMP")
+    except Exception:
+        pass
+
     # 1. Look up the user by email
     user = conn.execute(
         "SELECT * FROM Users WHERE email = ?",
@@ -230,12 +242,18 @@ def login(data: LoginRequest):
         conn.close()
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
+    # 4. Capture the prior last_login (used by frontend to decide whether to
+    #    show the "What's New" dialog), then refresh it to now.
+    previous_login = user["last_login"] if "last_login" in user.keys() else None
+    now_ts = now_timestamp()
+    conn.execute("UPDATE Users SET last_login = ? WHERE user_id = ?", (now_ts, user["user_id"]))
+    conn.commit()
     conn.close()
 
-    # 4. Return user info
     return {
         "message": "Login successful",
         "user_id": user["user_id"],
         "name": user["name"] if "name" in user.keys() else "",
-        "email": user["email"]
+        "email": user["email"],
+        "previous_login": previous_login,
     }
