@@ -1,6 +1,6 @@
 // Session utility functions for App.tsx
 
-export type PageView = "landing" | "template" | "manageTemplate" | "login" | "account" | "dashboard" | "recommendBudget" | "about" | "contact" | "privacy" | "terms" | "signup" | "forgotPassword" | "features" | "admin" | "goalSet" | "goalBudget";
+export type PageView = "landing" | "template" | "manageTemplate" | "login" | "account" | "dashboard" | "recommendBudget" | "about" | "contact" | "privacy" | "terms" | "signup" | "forgotPassword" | "features" | "admin" | "goalSet" | "goalBudget" | "changelog";
 
 // Pages that require authentication
 export const protectedPages = new Set<PageView>([
@@ -45,6 +45,7 @@ export function getPageFromPathname(pathname: string): PageView {
     "admin": "admin",
     "goalset": "goalSet",
     "goalbudget": "goalBudget",
+    "changelog": "changelog",
   };
   
   return pathMap[cleanPath] ?? "landing";

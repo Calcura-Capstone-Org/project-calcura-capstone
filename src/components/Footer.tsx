@@ -1,5 +1,6 @@
 /*Jaren Schneider wrote 79 lines of code for this file */
 import { Twitter, Facebook, Instagram } from "lucide-react";
+import changelog from "../data/changelog.json";
 
 /* API URL */
 const API_URL = import.meta.env.VITE_API_URL;
@@ -7,15 +8,19 @@ const API_URL = import.meta.env.VITE_API_URL;
 //remove later
 console.log("API_URL =", API_URL);
 
+const showUntil = changelog.show_until ? new Date(changelog.show_until).getTime() : 0;
+const updatesAreFresh = showUntil > Date.now();
+
 interface FooterProps {
   onAboutClick?: () => void;
   onContactClick?: () => void;
   onFAQClick?: () => void;
   onPrivacyClick?: () => void;
   onTermsClick?: () => void;
+  onUpdatesClick?: () => void;
 }
 
-export function Footer({ onAboutClick, onContactClick, onFAQClick, onPrivacyClick, onTermsClick }: FooterProps) {
+export function Footer({ onAboutClick, onContactClick, onFAQClick, onPrivacyClick, onTermsClick, onUpdatesClick }: FooterProps) {
   return (
     <footer className="bg-white border-t py-12">
       <div className="max-w-7xl mx-auto px-6">
@@ -24,7 +29,27 @@ export function Footer({ onAboutClick, onContactClick, onFAQClick, onPrivacyClic
             <h3 className="text-gray-900 mb-4">Product</h3>
             <ul className="space-y-2">
               <li><a href="#features" className="text-gray-600 hover:text-gray-900">Features</a></li>
-              <li><a href="#" className="text-gray-600 hover:text-gray-900">Updates</a></li>
+              <li>
+                <button
+                  onClick={onUpdatesClick}
+                  className="text-gray-600 hover:text-gray-900 inline-flex items-center gap-2"
+                >
+                  Updates
+                  {updatesAreFresh && (
+                    <span
+                      aria-label="New updates"
+                      title="New updates"
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        backgroundColor: "#16a34a",
+                        display: "inline-block",
+                      }}
+                    />
+                  )}
+                </button>
+              </li>
             </ul>
           </div>
           

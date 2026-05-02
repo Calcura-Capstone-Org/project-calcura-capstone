@@ -32,7 +32,8 @@ def mock_db():
             age INTEGER,
             is_active INTEGER DEFAULT 1,
             created_on TEXT,
-            updated_on TEXT
+            updated_on TEXT,
+            last_login TIMESTAMP
         )
     """)
     conn.execute("""
@@ -160,6 +161,54 @@ class TestUsers:
         data = response.json()
         assert data["message"] == "Login successful"
         assert data["email"] == "login@example.com"
+        assert "previous_login" in data
+
+    def test_create_user_seeds_last_login(self, client):
+        # Brand-new accounts get last_login = signup time so the first login
+        # finds a non-null previous_login (and won't get treated as
+        # "first-ever login → skip changelog modal").
+        client.post("/users/", json={
+            "name": "Seeded User",
+            "email": "seeded@example.com",
+            "password": "SeededPassword1!",
+            "age": 27
+        })
+        users = client.get("/users/").json()
+        assert users[0]["last_login"] is not None
+
+    def test_login_first_returns_signup_timestamp(self, client):
+        client.post("/users/", json={
+            "name": "First Login User",
+            "email": "first@example.com",
+            "password": "FirstLoginPass1!",
+            "age": 28
+        })
+        signup_last_login = client.get("/users/").json()[0]["last_login"]
+
+        data = client.post("/users/login", json={
+            "email": "first@example.com",
+            "password": "FirstLoginPass1!"
+        }).json()
+        assert data["previous_login"] == signup_last_login
+
+    def test_login_advances_last_login(self, client):
+        client.post("/users/", json={
+            "name": "Repeat User",
+            "email": "repeat@example.com",
+            "password": "RepeatPassword1!",
+            "age": 29
+        })
+        client.post("/users/login", json={
+            "email": "repeat@example.com",
+            "password": "RepeatPassword1!"
+        })
+        after_first = client.get("/users/").json()[0]["last_login"]
+
+        data = client.post("/users/login", json={
+            "email": "repeat@example.com",
+            "password": "RepeatPassword1!"
+        }).json()
+        assert data["previous_login"] == after_first
 
     def test_login_wrong_password(self, client):
         client.post("/users/", json={

@@ -44,6 +44,13 @@ describe('Footer', () => {
     expect(screen.getByText('Updates')).toBeInTheDocument();
   });
 
+  it('calls onUpdatesClick when Updates is clicked', () => {
+    const onUpdatesClick = vi.fn();
+    render(<Footer {...defaultProps} onUpdatesClick={onUpdatesClick} />);
+    fireEvent.click(screen.getByText('Updates'));
+    expect(onUpdatesClick).toHaveBeenCalled();
+  });
+
   it('renders support links', () => {
     render(<Footer {...defaultProps} />);
     expect(screen.getByText('FAQs')).toBeInTheDocument();

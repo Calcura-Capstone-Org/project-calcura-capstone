@@ -16,6 +16,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Regenerate changelog from GitHub Releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/build_changelog.py
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 

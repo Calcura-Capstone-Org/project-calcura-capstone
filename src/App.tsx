@@ -23,6 +23,9 @@ import { AdminPage } from "./components/AdminPage";
 import { GoalSetPage } from "./components/GoalSetPage";
 import { GoalBudget } from "./components/GoalBudget";
 import { FAQPage } from "./components/FAQPage";
+import { ChangelogPage } from "./components/ChangelogPage";
+import { WhatsNewDialog } from "./components/WhatsNewDialog";
+import changelog from "./data/changelog.json";
 
 import { hasActiveSession, getPageFromPathname, protectedPages, type PageView as PageViewBase } from "./utils/sessionUtils";
 
@@ -41,6 +44,7 @@ export default function App() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [whatsNewOpen, setWhatsNewOpen] = useState(false);
 
   const refreshAdminStatus = async (userId: string | null) => {
     if (!userId) {
@@ -102,7 +106,7 @@ export default function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  const handleLogin = () => {
+  const handleLogin = (previousLogin: string | null) => {
     setIsLoggedIn(true);
     const storedUsername = localStorage.getItem("username") ?? "";
     const storedEmail = localStorage.getItem("email") ?? "";
@@ -110,6 +114,17 @@ export default function App() {
     setUsername(storedUsername);
     setEmail(storedEmail);
     void refreshAdminStatus(storedUserId);
+
+    // Show "What's New" if the user hasn't logged in since the latest release.
+    // previousLogin === null means brand-new account (first-ever login) — skip.
+    if (previousLogin && changelog.released_at) {
+      const prevTs = new Date(previousLogin).getTime();
+      const releasedTs = new Date(changelog.released_at).getTime();
+      if (!Number.isNaN(prevTs) && !Number.isNaN(releasedTs) && prevTs < releasedTs) {
+        setWhatsNewOpen(true);
+      }
+    }
+
     navigate("dashboard");
   };
 
@@ -174,6 +189,7 @@ export default function App() {
     onFAQClick: () => navigate("faq"),
     onPrivacyClick: () => navigate("privacy"),
     onTermsClick: () => navigate("terms"),
+    onUpdatesClick: () => navigate("changelog"),
   };
 
   if (currentPage === "dashboard") {
@@ -186,6 +202,14 @@ export default function App() {
           onManageBudgets={() => navigate("manageTemplate")}
         />
         <Footer {...footerProps} />
+        <WhatsNewDialog
+          open={whatsNewOpen}
+          onOpenChange={setWhatsNewOpen}
+          onViewAll={() => {
+            setWhatsNewOpen(false);
+            navigate("changelog");
+          }}
+        />
       </div>
     );
   }
@@ -314,7 +338,17 @@ if (currentPage === "faq") {
     return (
       <div className="min-h-screen bg-white">
         <Header {...headerProps} />
-        <FAQPage onContactClick={() => navigate("contact")} />  
+        <FAQPage onContactClick={() => navigate("contact")} />
+        <Footer {...footerProps} />
+      </div>
+    );
+  }
+
+  if (currentPage === "changelog") {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header {...headerProps} />
+        <ChangelogPage />
         <Footer {...footerProps} />
       </div>
     );
