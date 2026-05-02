@@ -124,6 +124,13 @@ export default function App() {
       const releasedDate = String(changelog.released_at).slice(0, 10);
       if (prevDate && releasedDate && prevDate < releasedDate) {
         setWhatsNewOpen(true);
+        // Modal popping is the user being notified — clear the footer dot for
+        // this browser as well.
+        try {
+          if (changelog.version) localStorage.setItem("calcura.changelogSeen", changelog.version);
+        } catch {
+          // localStorage unavailable — silently no-op.
+        }
       }
     }
 

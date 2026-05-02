@@ -1,6 +1,9 @@
+import { useEffect } from "react";
 import { Card } from "./ui/card";
 import { Sparkles, Plus, ArrowRight, Check, Minus, Dot, type LucideIcon } from "lucide-react";
 import changelog from "../data/changelog.json";
+
+const SEEN_KEY = "calcura.changelogSeen";
 
 interface ChangelogEntry {
   version: string;
@@ -31,6 +34,17 @@ function formatDate(iso: string): string {
 
 export function ChangelogPage() {
   const entries: ChangelogEntry[] = changelog.entries ?? [];
+
+  useEffect(() => {
+    // Visiting the page acknowledges the current release — clears the footer
+    // "new" dot for this browser. Re-armed automatically when changelog.version
+    // changes on the next release build.
+    try {
+      if (changelog.version) localStorage.setItem(SEEN_KEY, changelog.version);
+    } catch {
+      // localStorage unavailable — silently no-op.
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-white">

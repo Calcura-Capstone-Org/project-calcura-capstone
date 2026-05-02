@@ -8,8 +8,17 @@ const API_URL = import.meta.env.VITE_API_URL;
 //remove later
 console.log("API_URL =", API_URL);
 
-const showUntil = changelog.show_until ? new Date(changelog.show_until).getTime() : 0;
-const updatesAreFresh = showUntil > Date.now();
+const SEEN_KEY = "calcura.changelogSeen";
+
+function hasUnseenChangelog(): boolean {
+  if (!changelog.version) return false;
+  try {
+    return localStorage.getItem(SEEN_KEY) !== changelog.version;
+  } catch {
+    // localStorage unavailable (private mode) — show the dot rather than hide it.
+    return true;
+  }
+}
 
 interface FooterProps {
   onAboutClick?: () => void;
@@ -21,6 +30,7 @@ interface FooterProps {
 }
 
 export function Footer({ onAboutClick, onContactClick, onFAQClick, onPrivacyClick, onTermsClick, onUpdatesClick }: FooterProps) {
+  const updatesAreFresh = hasUnseenChangelog();
   return (
     <footer className="bg-white border-t py-12">
       <div className="max-w-7xl mx-auto px-6">
