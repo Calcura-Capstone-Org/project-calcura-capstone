@@ -116,11 +116,13 @@ export default function App() {
     void refreshAdminStatus(storedUserId);
 
     // Show "What's New" if the user hasn't logged in since the latest release.
+    // Compare YYYY-MM-DD prefixes as strings — sidesteps Date() parsing quirks
+    // across the "YYYY-MM-DD HH:MM:SS" (server) vs "YYYY-MM-DD" (changelog) formats.
     // previousLogin === null means brand-new account (first-ever login) — skip.
     if (previousLogin && changelog.released_at) {
-      const prevTs = new Date(previousLogin).getTime();
-      const releasedTs = new Date(changelog.released_at).getTime();
-      if (!Number.isNaN(prevTs) && !Number.isNaN(releasedTs) && prevTs < releasedTs) {
+      const prevDate = String(previousLogin).slice(0, 10);
+      const releasedDate = String(changelog.released_at).slice(0, 10);
+      if (prevDate && releasedDate && prevDate < releasedDate) {
         setWhatsNewOpen(true);
       }
     }

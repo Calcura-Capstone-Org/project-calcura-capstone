@@ -49,7 +49,20 @@ export function WhatsNewDialog({ open, onOpenChange, onViewAll }: WhatsNewDialog
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent
+        style={{
+          position: "fixed",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: "calc(100% - 2rem)",
+          maxWidth: "32rem",
+          maxHeight: "85vh",
+          overflowY: "auto",
+          zIndex: 50,
+          backgroundColor: "white",
+        }}
+      >
         <DialogHeader>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center shrink-0">
