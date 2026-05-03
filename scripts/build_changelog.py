@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#Jonathan Torres wrote 127 lines of code for this file
+#Jonathan Torres wrote 136 lines of code for this file
 """Regenerate src/data/changelog.json from this repo's GitHub Releases.
 
 Source of truth = GitHub Releases. Run on every release publish from
@@ -70,16 +70,27 @@ def to_date(iso: str) -> str:
 
 
 def fetch_releases() -> list[dict]:
-    result = subprocess.run(
+    # `body` is not available from `gh release list`; fetch metadata first,
+    # then pull the body for each tag individually via `gh release view`.
+    list_result = subprocess.run(
         [
             "gh", "release", "list",
             "--exclude-drafts", "--exclude-pre-releases",
             "--limit", "100",
-            "--json", "tagName,name,publishedAt,body",
+            "--json", "tagName,name,publishedAt",
         ],
         check=True, capture_output=True, text=True,
     )
-    return json.loads(result.stdout)
+    releases = json.loads(list_result.stdout)
+
+    for release in releases:
+        view_result = subprocess.run(
+            ["gh", "release", "view", release["tagName"], "--json", "body"],
+            check=True, capture_output=True, text=True,
+        )
+        release["body"] = json.loads(view_result.stdout).get("body", "")
+
+    return releases
 
 
 def build_entry(release: dict) -> dict | None:
