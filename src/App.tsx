@@ -14,19 +14,69 @@ import { AccountPage } from "./components/AccountPage";
 import { DashboardPage } from "./components/DashboardPage";
 import { AboutPage } from "./components/AboutPage";
 import { ContactPage } from "./components/ContactPage";
+import { PrivacyPolicy } from "./components/PrivacyPolicy";
+import { TermsOfService } from "./components/TermsOfService";
 import { SignUpPage } from "./components/SignUpPage";
 import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
 import { RecommendBudgetPage } from "./components/RecommendBudgetPage";
 import { AdminPage } from "./components/AdminPage";
 import { GoalSetPage } from "./components/GoalSetPage";
 import { GoalBudget } from "./components/GoalBudget";
+import { FAQPage } from "./components/FAQPage";
+import { ChangelogPage } from "./components/ChangelogPage";
+import { WhatsNewDialog } from "./components/WhatsNewDialog";
+import changelog from "./data/changelog.json";
 
-type PageView = "landing" | "template" | "manageTemplate" | "login" | "account" | "dashboard" | "recommendBudget" | "about" | "contact" | "signup" | "forgotPassword" | "features" | "admin" | "goalSet" | "goalBudget";
+import { hasActiveSession, getPageFromPathname, protectedPages, type PageView as PageViewBase } from "./utils/sessionUtils";
+
+const API_URL = import.meta.env.VITE_API_URL;
+
+interface UserRoleApiResponse {
+  user_id?: number | string;
+  role_id?: number | string;
+}
+
+type PageView = PageViewBase | "faq";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<PageView>("landing");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [whatsNewOpen, setWhatsNewOpen] = useState(false);
+
+  const refreshAdminStatus = async (userId: string | null) => {
+    if (!userId) {
+      setIsAdmin(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/user_roles/`);
+      if (!res.ok) throw new Error("Failed to fetch user roles");
+
+      const userRoles: UserRoleApiResponse[] = await res.json();
+      const hasAdminRole = userRoles.some(
+        (ur) => String(ur.user_id) === String(userId) && Number(ur.role_id) === 5
+      );
+      setIsAdmin(hasAdminRole);
+    } catch {
+      setIsAdmin(false);
+    }
+  };
+
+  useEffect(() => {
+    const storedEmail = localStorage.getItem("email") ?? "";
+    const storedUsername = localStorage.getItem("username") ?? "";
+    const storedUserId = localStorage.getItem("user_id");
+    if (storedEmail || storedUsername) {
+      setIsLoggedIn(true);
+      setUsername(storedUsername);
+      setEmail(storedEmail);
+      void refreshAdminStatus(storedUserId);
+    }
+  }, []);
 
   const navigate = (page: PageView) => {
     window.history.pushState({ page }, "", `/${page === "landing" ? "" : page}`);
@@ -35,10 +85,19 @@ export default function App() {
   };
 
   useEffect(() => {
-    window.history.replaceState({ page: "landing" }, "", "/");
+    const loggedIn = hasActiveSession();
+    const storedUsername = localStorage.getItem("username") ?? "";
+    const requestedPage = getPageFromPathname(window.location.pathname);
+    const initialPage = !loggedIn && protectedPages.has(requestedPage) ? "login" : requestedPage;
+
+    setIsLoggedIn(loggedIn);
+    setUsername(storedUsername);
+    setCurrentPage(initialPage);
+    window.history.replaceState({ page: initialPage }, "", `/${initialPage === "landing" ? "" : initialPage}`);
 
     const handlePopState = (e: PopStateEvent) => {
-      const page: PageView = e.state?.page ?? "landing";
+      const requestedPage: PageView = e.state?.page ?? getPageFromPathname(window.location.pathname);
+      const page = !hasActiveSession() && protectedPages.has(requestedPage) ? "login" : requestedPage;
       setCurrentPage(page);
       window.scrollTo(0, 0);
     };
@@ -47,9 +106,34 @@ export default function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  const handleLogin = () => {
+  const handleLogin = (previousLogin: string | null) => {
     setIsLoggedIn(true);
-    setUsername(localStorage.getItem("username") ?? "");
+    const storedUsername = localStorage.getItem("username") ?? "";
+    const storedEmail = localStorage.getItem("email") ?? "";
+    const storedUserId = localStorage.getItem("user_id");
+    setUsername(storedUsername);
+    setEmail(storedEmail);
+    void refreshAdminStatus(storedUserId);
+
+    // Show "What's New" if the user hasn't logged in since the latest release.
+    // Compare YYYY-MM-DD prefixes as strings — sidesteps Date() parsing quirks
+    // across the "YYYY-MM-DD HH:MM:SS" (server) vs "YYYY-MM-DD" (changelog) formats.
+    // previousLogin === null means brand-new account (first-ever login) — skip.
+    if (previousLogin && changelog.released_at) {
+      const prevDate = String(previousLogin).slice(0, 10);
+      const releasedDate = String(changelog.released_at).slice(0, 10);
+      if (prevDate && releasedDate && prevDate < releasedDate) {
+        setWhatsNewOpen(true);
+        // Modal popping is the user being notified — clear the footer dot for
+        // this browser as well.
+        try {
+          if (changelog.version) localStorage.setItem("calcura.changelogSeen", changelog.version);
+        } catch {
+          // localStorage unavailable — silently no-op.
+        }
+      }
+    }
+
     navigate("dashboard");
   };
 
@@ -103,12 +187,18 @@ export default function App() {
     onFeaturesClick: () => navigate("features"),
     isLoggedIn,
     username,
+    isAdmin,
     onAdminClick: () => navigate("admin"),
+    onFAQClick: () => navigate("faq"),
   };
 
   const footerProps = {
     onAboutClick: () => navigate("about"),
     onContactClick: () => navigate("contact"),
+    onFAQClick: () => navigate("faq"),
+    onPrivacyClick: () => navigate("privacy"),
+    onTermsClick: () => navigate("terms"),
+    onUpdatesClick: () => navigate("changelog"),
   };
 
   if (currentPage === "dashboard") {
@@ -121,6 +211,14 @@ export default function App() {
           onManageBudgets={() => navigate("manageTemplate")}
         />
         <Footer {...footerProps} />
+        <WhatsNewDialog
+          open={whatsNewOpen}
+          onOpenChange={setWhatsNewOpen}
+          onViewAll={() => {
+            setWhatsNewOpen(false);
+            navigate("changelog");
+          }}
+        />
       </div>
     );
   }
@@ -149,7 +247,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-purple-50">
         <Header {...headerProps} activePage="about" />
-        <AboutPage />
+        <AboutPage isAdmin={isAdmin} />
         <Footer {...footerProps} />
       </div>
     );
@@ -159,7 +257,27 @@ export default function App() {
     return (
       <div className="min-h-screen bg-teal-50">
         <Header {...headerProps} activePage="contact" />
-        <ContactPage />
+        <ContactPage isAdmin={isAdmin} />
+        <Footer {...footerProps} />
+      </div>
+    );
+  }
+
+  if (currentPage === "privacy") {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header {...headerProps} />
+        <PrivacyPolicy />
+        <Footer {...footerProps} />
+      </div>
+    );
+  }
+
+  if (currentPage === "terms") {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header {...headerProps} />
+        <TermsOfService />
         <Footer {...footerProps} />
       </div>
     );
@@ -169,7 +287,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-green-50">
         <Header {...headerProps} activePage="template" />
-        <TemplatePage onTemplateSaved={() => navigate("dashboard")} />
+        <TemplatePage onTemplateSaved={() => navigate("dashboard")} isAdmin={isAdmin} />
         <Footer {...footerProps} />
       </div>
     );
@@ -189,7 +307,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-blue-50">
         <Header {...headerProps} activePage="features" />
-        <FeaturesPage onRecommendBudgetClick={() => navigate("recommendBudget")} onGoalSettingClick={() => navigate("goalSet")} onGoalSeekClick={() => navigate("goalBudget")} />
+        <FeaturesPage onRecommendBudgetClick={() => navigate("recommendBudget")} onGoalSettingClick={() => navigate("goalSet")} onGoalSeekClick={() => navigate("goalBudget")} isAdmin={isAdmin} />
         <Footer {...footerProps} />
       </div>
     );
@@ -225,12 +343,32 @@ export default function App() {
     );
   }
 
+if (currentPage === "faq") {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header {...headerProps} />
+        <FAQPage onContactClick={() => navigate("contact")} />
+        <Footer {...footerProps} />
+      </div>
+    );
+  }
+
+  if (currentPage === "changelog") {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header {...headerProps} />
+        <ChangelogPage />
+        <Footer {...footerProps} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <Header {...headerProps} />
-      <HeroSection />
-      <FeaturesSection />
-      <BudgetTemplatesSection onSelectTemplate={() => navigate("template")} />
+      <HeroSection isAdmin={isAdmin} />
+      <FeaturesSection isAdmin={isAdmin} />
+      <BudgetTemplatesSection onSelectTemplate={() => navigate("template")} isAdmin={isAdmin} />
       <Footer {...footerProps} />
       <FeedbackButton />
     </div>

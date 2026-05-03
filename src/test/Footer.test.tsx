@@ -1,4 +1,4 @@
-/*Jonathan Torres wrote all 52 lines of code for this file*/
+/*Jonathan Torres wrote all 60 lines of code for this file*/
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Footer } from '../components/Footer';
 
@@ -42,6 +42,13 @@ describe('Footer', () => {
     render(<Footer {...defaultProps} />);
     expect(screen.getByText('Features')).toBeInTheDocument();
     expect(screen.getByText('Updates')).toBeInTheDocument();
+  });
+
+  it('calls onUpdatesClick when Updates is clicked', () => {
+    const onUpdatesClick = vi.fn();
+    render(<Footer {...defaultProps} onUpdatesClick={onUpdatesClick} />);
+    fireEvent.click(screen.getByText('Updates'));
+    expect(onUpdatesClick).toHaveBeenCalled();
   });
 
   it('renders support links', () => {
