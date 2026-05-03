@@ -1,3 +1,4 @@
+#Jonathan Torres wrote 82 lines of code for this file
 """Unit tests for scripts/build_changelog.py — the release-time changelog generator."""
 
 import sys

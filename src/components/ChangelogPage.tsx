@@ -1,3 +1,4 @@
+/* Jonathan Torres wrote all 111 lines of code for this file */
 import { useEffect } from "react";
 import { Card } from "./ui/card";
 import { Sparkles, Plus, ArrowRight, Check, Minus, Dot, type LucideIcon } from "lucide-react";

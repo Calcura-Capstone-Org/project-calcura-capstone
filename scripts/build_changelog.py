@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#Jonathan Torres wrote 127 lines of code for this file
 """Regenerate src/data/changelog.json from this repo's GitHub Releases.
 
 Source of truth = GitHub Releases. Run on every release publish from

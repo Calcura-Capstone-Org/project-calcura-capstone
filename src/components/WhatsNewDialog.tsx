@@ -1,3 +1,4 @@
+/* Jonathan Torres wrote all 117 lines of code for this file */
 import { Sparkles, Plus, ArrowRight, Check, Minus, Dot, type LucideIcon } from "lucide-react";
 import {
   Dialog,
