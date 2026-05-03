@@ -1,4 +1,4 @@
-/*Jonathan Torres wrote all 52 lines of code for this file*/
+/*Jonathan Torres wrote all 60 lines of code for this file*/
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Footer } from '../components/Footer';
 
