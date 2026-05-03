@@ -283,6 +283,25 @@ export function AdminPage() {
     }
   };
 
+  const handleDeleteRole = async (roleId: string, roleName: string) => {
+    if (roleId === "5" || roleName.toLowerCase() === "admin") {
+      toast.error("The admin role cannot be deleted");
+      return;
+    }
+
+    const confirmed = window.confirm(`Are you sure you want to delete the "${roleName}" role? This action cannot be undone.`);
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`${API_URL}/roles/${roleId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Delete failed");
+      setRoles(roles.filter((r) => r.id !== roleId));
+      toast.success(`Role "${roleName}" deleted successfully`);
+    } catch {
+      toast.error("Failed to delete role. Please try again.");
+    }
+  };
+
   const handleAddRole = async () => {
     if (!newRoleId.trim() || !newRoleName.trim()) {
       toast.error("Please provide role ID and role name");
@@ -623,7 +642,7 @@ export function AdminPage() {
                       <Label htmlFor="roleId">Role ID</Label>
                       <Input
                         id="roleId"
-                        placeholder="e.g. 1 or admin"
+                        placeholder="Integer value (e.g. 1)"
                         value={newRoleId}
                         onChange={(e) => setNewRoleId(e.target.value)}
                         className="mt-1"
@@ -643,7 +662,7 @@ export function AdminPage() {
                       <Label htmlFor="rolePermissions">Role Permissions</Label>
                       <Input
                         id="rolePermissions"
-                        placeholder="e.g. read,write,delete"
+                        placeholder="User, Admin, etc."
                         value={newRolePermissions}
                         onChange={(e) => setNewRolePermissions(e.target.value)}
                         className="mt-1"
@@ -668,10 +687,22 @@ export function AdminPage() {
                       roles.map((role) => (
                         <div key={role.id} className="flex items-center justify-between p-3 border rounded-lg">
                           <span className="text-sm text-gray-700">Role ID: {role.id}</span>
-                          <div className="text-right">
-                            <span className="block text-sm font-medium text-gray-900">{role.name}</span>
-                            <span className="block text-xs text-gray-600">Permissions: {role.permissions || "None"}</span>
-                            <span className="block text-xs text-gray-600">Description: {role.description || "None"}</span>
+                          <div className="flex items-center gap-4">
+                            <div className="text-right">
+                              <span className="block text-sm font-medium text-gray-900">{role.name}</span>
+                              <span className="block text-xs text-gray-600">Permissions: {role.permissions || "None"}</span>
+                              <span className="block text-xs text-gray-600">Description: {role.description || "None"}</span>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleDeleteRole(role.id, role.name)}
+                              disabled={role.id === "5" || role.name.toLowerCase() === "admin"}
+                              title={role.id === "5" || role.name.toLowerCase() === "admin" ? "Admin role cannot be deleted" : "Delete role"}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                           </div>
                         </div>
                       ))

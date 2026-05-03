@@ -79,7 +79,7 @@ export function SignUpPage({
         },
         body: JSON.stringify({
           name,
-          email,
+          email: email.trim().toLowerCase(),
           password,
           age,
         }),

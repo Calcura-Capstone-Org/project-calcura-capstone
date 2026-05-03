@@ -71,3 +71,19 @@ def create_role(role: RoleCreate):
     conn.close()
     return {"Message": "Role created successfully"}
 
+@router.delete("/{role_id}")
+def delete_role(role_id: int):
+    conn = get_connection()
+    row = conn.execute("SELECT * FROM Roles WHERE role_id = ?", (role_id,)).fetchone()
+    if row is None:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Role not found")
+    role = dict(row)
+    if role_id == 5 or role.get("name", "").lower() == "admin":
+        conn.close()
+        raise HTTPException(status_code=403, detail="The admin role cannot be deleted")
+    conn.execute("DELETE FROM Roles WHERE role_id = ?", (role_id,))
+    conn.commit()
+    conn.close()
+    return {"Message": "Role deleted successfully"}
+
