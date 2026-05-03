@@ -94,16 +94,19 @@ project-calcura-capstone/
 ├── .env.production         # Build-time env vars for prod (VITE_API_URL="")
 ├── routers/                # FastAPI routers (users, budgets, goals, ...)
 ├── Database/               # SQLite database file
+├── scripts/                # Release-time scripts
+│   └── build_changelog.py  # Regenerates src/data/changelog.json from GitHub Releases
 ├── src/
 │   ├── App.tsx             # Top-level routing / page state
 │   ├── components/         # All React pages and widgets
 │   ├── components/ui/      # shadcn/ui primitives
+│   ├── data/               # Static JSON data files (changelog.json)
 │   ├── styles/             # Global CSS
 │   └── test/               # Vitest unit tests
 ├── tests/                  # pytest backend tests
 └── .github/workflows/
     ├── build.yml           # CI: build + test on push/PR
-    └── release.yml         # CD: build and push image to GHCR on release
+    └── release.yml         # CD: regenerate changelog, build and push image to GHCR on release
 ```
 
 ## API Documentation
