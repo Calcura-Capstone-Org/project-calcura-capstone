@@ -15,7 +15,7 @@ interface LoginPageProps {
   onCreateAccount?: () => void;
   onContinueAsGuest?: () => void;
   onHomeClick?: () => void;
-  onLoginSuccess?: () => void;
+  onLoginSuccess?: (previousLogin: string | null) => void;
   onForgotPassword?: () => void;
 }
 
@@ -58,7 +58,7 @@ export function LoginPage({
       localStorage.setItem("email", data.email);
       localStorage.setItem("username", data.name ?? "");
 
-      onLoginSuccess?.();
+      onLoginSuccess?.(data.previous_login ?? null);
 
     } catch (error) {
       console.error("Network error:", error);

@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "./ui/alert";
 
 interface TemplatePageProps {
   onTemplateSaved?: () => void;
+  isAdmin?: boolean;
 }
 
 /* API URL */
@@ -49,9 +50,13 @@ interface Investment {
   amount: string;
 }
 
-export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
+export function TemplatePage({ onTemplateSaved, isAdmin = false }: TemplatePageProps) {
   const [currentSection, setCurrentSection] = useState(1);
   const [activeUserEmail, setActiveUserEmail] = useState("");
+
+  // Editable titles
+  const [incomeTitle, setIncomeTitle] = useState("Income");
+  const [expensesTitle, setExpensesTitle] = useState("Expenses");
   
   // Income section
   const [incomeType, setIncomeType] = useState<"takehome" | "annual" | "">("");
@@ -97,6 +102,12 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
     if (userId) {
       setCurrentUserId(Number(userId));
     }
+
+    // Load editable titles
+    const savedIncomeTitle = localStorage.getItem("templateIncomeTitle");
+    const savedExpensesTitle = localStorage.getItem("templateExpensesTitle");
+    if (savedIncomeTitle) setIncomeTitle(savedIncomeTitle);
+    if (savedExpensesTitle) setExpensesTitle(savedExpensesTitle);
   }, []);
 
   const commonExpenses = [
@@ -121,6 +132,19 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
     "Personal Loan",
     "Other"
   ];
+
+  // Handlers for editable titles
+  const handleIncomeTitleBlur = (e: React.FormEvent<HTMLDivElement>) => {
+    const newTitle = e.currentTarget.textContent || "";
+    setIncomeTitle(newTitle);
+    localStorage.setItem("templateIncomeTitle", newTitle);
+  };
+
+  const handleExpensesTitleBlur = (e: React.FormEvent<HTMLDivElement>) => {
+    const newTitle = e.currentTarget.textContent || "";
+    setExpensesTitle(newTitle);
+    localStorage.setItem("templateExpensesTitle", newTitle);
+  };
 
   const calculateTakeHome = () => {
     if (!annualIncome || !filingStatus) return;
@@ -619,7 +643,13 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
             {/* Income Card */}
             <Card>
               <CardHeader>
-                <CardTitle>Income</CardTitle>
+                <CardTitle
+                  contentEditable={isAdmin}
+                  onBlur={handleIncomeTitleBlur}
+                  suppressContentEditableWarning={true}
+                >
+                  {incomeTitle}
+                </CardTitle>
                 <CardDescription>Tell us about your income</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -718,7 +748,13 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
             {/* Expenses Card */}
             <Card>
               <CardHeader>
-                <CardTitle>Expenses</CardTitle>
+                <CardTitle
+                  contentEditable={isAdmin}
+                  onBlur={handleExpensesTitleBlur}
+                  suppressContentEditableWarning={true}
+                >
+                  {expensesTitle}
+                </CardTitle>
                 <CardDescription>Add your regular expenses</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -729,7 +765,7 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
                         <Label>Expense Type</Label>
                         <Select
                           value={expense.type}
-                          onValueChange={(value) => updateExpense(expense.id, "type", value)}
+                          onValueChange={(value: string) => updateExpense(expense.id, "type", value)}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select expense type" />
@@ -813,7 +849,7 @@ export function TemplatePage({ onTemplateSaved }: TemplatePageProps) {
                       <Label>Debt Type</Label>
                       <Select
                         value={debt.type}
-                        onValueChange={(value) => updateDebt(debt.id, "type", value)}
+                        onValueChange={(value: string) => updateDebt(debt.id, "type", value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select debt type" />

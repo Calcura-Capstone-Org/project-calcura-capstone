@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import logoImage from "../assets/logoImage.png";
 
 const API_URL = import.meta.env.VITE_API_URL;
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
@@ -33,29 +34,85 @@ interface SiteImage {
   url: string;
 }
 
+interface Role {
+  id: string;
+  name: string;
+  permissions?: string;
+  description?: string;
+}
+
+interface RoleApiResponse {
+  role_id?: number | string;
+  id?: number | string;
+  name?: string;
+  permissions?: string;
+  description?: string;
+}
+
+interface UserRoleApiResponse {
+  user_id?: number | string;
+  role_id?: number | string;
+}
+
 export function AdminPage() {
   const [totalUsers, setTotalUsers] = useState<number | null>(null);
+  const currentUserId = localStorage.getItem("user_id");
 
   // User Management State
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
-    fetch(`${API_URL}/users`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch users");
-        return res.json();
-      })
-      .then((data: Array<{ user_id: number | null; name: string | null; email: string; created_on: string }>) => {
-        setTotalUsers(data.length);
-        setUsers(data.map((u) => ({
-          id: u.user_id != null ? String(u.user_id) : u.email,
-          name: u.name,
-          email: u.email,
-          created_on: u.created_on,
-          isAdmin: false,
-        })));
+    Promise.all([
+      fetch(`${API_URL}/users`),
+      fetch(`${API_URL}/user_roles/`),
+    ])
+      .then(async ([usersRes, userRolesRes]) => {
+        if (!usersRes.ok) throw new Error("Failed to fetch users");
+        if (!userRolesRes.ok) throw new Error("Failed to fetch user roles");
+
+        const usersData: Array<{ user_id: number | null; name: string | null; email: string; created_on: string }> = await usersRes.json();
+        const userRolesData: UserRoleApiResponse[] = await userRolesRes.json();
+
+        const adminUserIds = new Set(
+          userRolesData
+            .filter((ur) => Number(ur.role_id) === 5)
+            .map((ur) => String(ur.user_id))
+        );
+
+        setTotalUsers(usersData.length);
+        setUsers(
+          usersData.map((u) => {
+            const mappedId = u.user_id != null ? String(u.user_id) : u.email;
+            return {
+              id: mappedId,
+              name: u.name,
+              email: u.email,
+              created_on: u.created_on,
+              isAdmin: adminUserIds.has(mappedId),
+            };
+          })
+        );
       })
       .catch(() => setTotalUsers(null));
+  }, []);
+
+  useEffect(() => {
+    fetch(`${API_URL}/roles/`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch roles");
+        return res.json();
+      })
+      .then((data: RoleApiResponse[]) => {
+        setRoles(
+          data.map((role, index) => ({
+            id: String(role.role_id ?? role.id ?? index + 1),
+            name: role.name ?? "Unnamed Role",
+            permissions: role.permissions ?? "",
+            description: role.description ?? "",
+          }))
+        );
+      })
+      .catch(() => setRoles([]));
   }, []);
 
   // Content Management State
@@ -68,10 +125,17 @@ export function AdminPage() {
 
   // Image Management State
   const [siteImages, setSiteImages] = useState<SiteImage[]>([
-    { id: "1", name: "Hero Background", location: "Landing Page - Hero Section", url: "https://images.unsplash.com/photo-1554224155-6726b3ff858f" },
-    { id: "2", name: "Feature Image 1", location: "Features Section", url: "https://images.unsplash.com/photo-1460925895917-afdab827c52f" },
-    { id: "3", name: "Dashboard Preview", location: "Dashboard Page", url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71" },
+    { id: "1", name: "Calcura Brand Logo", location: "Landing & Site Branding", url: logoImage },
+    { id: "2", name: "Calcura Dashboard Preview", location: "Dashboard Page", url: logoImage },
+    { id: "3", name: "Calcura Hero Visual", location: "Landing Page Hero", url: logoImage },
   ]);
+
+  // Roles Management State
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [newRoleId, setNewRoleId] = useState("");
+  const [newRoleName, setNewRoleName] = useState("");
+  const [newRolePermissions, setNewRolePermissions] = useState("");
+  const [newRoleDescription, setNewRoleDescription] = useState("");
 
   // Dialog States
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
@@ -134,12 +198,51 @@ export function AdminPage() {
     }
   };
 
-  const handleToggleAdmin = (userId: string) => {
-    setUsers(users.map(u => 
-      u.id === userId ? { ...u, isAdmin: !u.isAdmin } : u
-    ));
-    const user = users.find(u => u.id === userId);
-    toast.success(`${user?.name} is now ${!user?.isAdmin ? 'an admin' : 'a regular user'}`);
+  const handleAdminRoleAction = async (userId: string) => {
+    const user = users.find((u) => u.id === userId);
+    if (!user) return;
+
+    if (user.isAdmin && currentUserId != null && String(currentUserId) === String(userId)) {
+      toast.error("You cannot remove yourself as an admin");
+      return;
+    }
+
+    const parsedUserId = Number(userId);
+    if (Number.isNaN(parsedUserId)) {
+      toast.error("Invalid user ID for admin role assignment");
+      return;
+    }
+
+    try {
+      if (user.isAdmin) {
+        const removeRes = await fetch(`${API_URL}/user_roles/${parsedUserId}/5`, {
+          method: "DELETE",
+        });
+
+        if (!removeRes.ok) throw new Error("Failed to remove admin role");
+
+        setUsers(users.map((u) => (u.id === userId ? { ...u, isAdmin: false } : u)));
+        toast.success(`${user.name ?? user.email} is no longer an admin`);
+      } else {
+        const assignRes = await fetch(`${API_URL}/user_roles/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: parsedUserId,
+            role_id: 5,
+          }),
+        });
+
+        if (!assignRes.ok) throw new Error("Failed to assign admin role");
+
+        setUsers(users.map((u) => (u.id === userId ? { ...u, isAdmin: true } : u)));
+        toast.success(`${user.name ?? user.email} is now an admin`);
+      }
+    } catch {
+      toast.error("Failed to update admin role. Please try again.");
+    }
   };
 
   // Content Management Functions
@@ -177,6 +280,67 @@ export function AdminPage() {
     if (confirmed) {
       setSiteImages(siteImages.filter(img => img.id !== imageId));
       toast.success("Image deleted");
+    }
+  };
+
+  const handleAddRole = async () => {
+    if (!newRoleId.trim() || !newRoleName.trim()) {
+      toast.error("Please provide role ID and role name");
+      return;
+    }
+
+    const trimmedRoleId = newRoleId.trim();
+    const trimmedRoleName = newRoleName.trim();
+    const trimmedRolePermissions = newRolePermissions.trim();
+    const trimmedRoleDescription = newRoleDescription.trim();
+
+    if (roles.some((role) => role.id === trimmedRoleId)) {
+      toast.error("Role ID already exists");
+      return;
+    }
+
+    const parsedRoleId = Number(trimmedRoleId);
+    if (Number.isNaN(parsedRoleId)) {
+      toast.error("Role ID must be a number");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/roles/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          role_id: parsedRoleId,
+          name: trimmedRoleName,
+          permissions: trimmedRolePermissions || null,
+          description: trimmedRoleDescription || null,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to create role");
+
+      const rolesRes = await fetch(`${API_URL}/roles/`);
+      if (!rolesRes.ok) throw new Error("Failed to refresh roles");
+      const rolesData: RoleApiResponse[] = await rolesRes.json();
+
+      setRoles(
+        rolesData.map((role, index) => ({
+          id: String(role.role_id ?? role.id ?? index + 1),
+          name: role.name ?? "Unnamed Role",
+          permissions: role.permissions ?? "",
+          description: role.description ?? "",
+        }))
+      );
+
+      toast.success("Role added successfully");
+      setNewRoleId("");
+      setNewRoleName("");
+      setNewRolePermissions("");
+      setNewRoleDescription("");
+    } catch {
+      toast.error("Failed to add role. Please try again.");
     }
   };
 
@@ -250,6 +414,10 @@ export function AdminPage() {
               <Image className="w-4 h-4 mr-2" />
               Images
             </TabsTrigger>
+            <TabsTrigger value="roles" className="flex-1">
+              <Shield className="w-4 h-4 mr-2" />
+              Roles
+            </TabsTrigger>
           </TabsList>
 
           {/* User Management Tab */}
@@ -294,10 +462,15 @@ export function AdminPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleToggleAdmin(user.id)}
+                          onClick={() => handleAdminRoleAction(user.id)}
+                          disabled={user.isAdmin && currentUserId != null && String(currentUserId) === String(user.id)}
                         >
                           <Shield className="w-4 h-4 mr-1" />
-                          {user.isAdmin ? 'Remove Admin' : 'Make Admin'}
+                          {user.isAdmin && currentUserId != null && String(currentUserId) === String(user.id)
+                            ? 'Cannot Remove Self'
+                            : user.isAdmin
+                              ? 'Remove Admin'
+                              : 'Make Admin'}
                         </Button>
                         <Button
                           variant="outline"
@@ -371,8 +544,8 @@ export function AdminPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Site Images</CardTitle>
-                    <CardDescription>Manage images used throughout the website</CardDescription>
+                    <CardTitle>Calcura Images</CardTitle>
+                    <CardDescription>Manage Calcura brand and app images used across the site</CardDescription>
                   </div>
                   <Button 
                     onClick={handleAddImage}
@@ -420,6 +593,90 @@ export function AdminPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Roles Management Tab */}
+          <TabsContent value="roles">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Roles</CardTitle>
+                    <CardDescription>Add and manage role identifiers</CardDescription>
+                  </div>
+                  <Button
+                    onClick={handleAddRole}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Roles
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <Label htmlFor="roleId">Role ID</Label>
+                      <Input
+                        id="roleId"
+                        placeholder="e.g. 1 or admin"
+                        value={newRoleId}
+                        onChange={(e) => setNewRoleId(e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="roleName">Role Name</Label>
+                      <Input
+                        id="roleName"
+                        placeholder="e.g. Administrator"
+                        value={newRoleName}
+                        onChange={(e) => setNewRoleName(e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="rolePermissions">Role Permissions</Label>
+                      <Input
+                        id="rolePermissions"
+                        placeholder="e.g. read,write,delete"
+                        value={newRolePermissions}
+                        onChange={(e) => setNewRolePermissions(e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="roleDescription">Role Description</Label>
+                      <Input
+                        id="roleDescription"
+                        placeholder="e.g. Can manage user access"
+                        value={newRoleDescription}
+                        onChange={(e) => setNewRoleDescription(e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {roles.length === 0 ? (
+                      <p className="text-sm text-gray-600">No roles added yet.</p>
+                    ) : (
+                      roles.map((role) => (
+                        <div key={role.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <span className="text-sm text-gray-700">Role ID: {role.id}</span>
+                          <div className="text-right">
+                            <span className="block text-sm font-medium text-gray-900">{role.name}</span>
+                            <span className="block text-xs text-gray-600">Permissions: {role.permissions || "None"}</span>
+                            <span className="block text-xs text-gray-600">Description: {role.description || "None"}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>

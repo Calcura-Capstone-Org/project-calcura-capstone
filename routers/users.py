@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import Optional
 from databasev1 import get_connection
 import hashlib
+import re
 import time
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -18,6 +19,20 @@ class UserCreate(BaseModel):
 #Helper Functions
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
+
+
+def is_valid_password(password: str) -> bool:
+    if len(password) < 14:
+        return False
+    if not re.search(r"[A-Za-z]", password):
+        return False
+    if not re.search(r"[A-Z]", password):
+        return False
+    if not re.search(r"\d", password):
+        return False
+    if not re.search(r"[^A-Za-z0-9]", password):
+        return False
+    return True
 
 def now_timestamp() -> str:
     return time.strftime("%Y-%m-%d %H:%M:%S")
@@ -34,6 +49,13 @@ def list_users():
 @router.post("/")
 def create_user(user: UserCreate):
     conn = get_connection()
+
+    if not is_valid_password(user.password):
+        conn.close()
+        raise HTTPException(
+            status_code=400,
+            detail="Password must be at least 14 characters and include at least one letter, one uppercase letter, one number, and one symbol",
+        )
 
     # Prevent race conditions and ensure consistent id assignment.
     # SQLite: use immediate transaction before SELECT/INSERT for write operations.
@@ -52,6 +74,12 @@ def create_user(user: UserCreate):
     except Exception:
         pass
 
+    # Ensure last_login column exists on Users table
+    try:
+        conn.execute("ALTER TABLE Users ADD COLUMN last_login TIMESTAMP")
+    except Exception:
+        pass
+
     # Get next available user_id from existing rows
     result = conn.execute("SELECT MAX(user_id) AS max_id FROM Users").fetchone()
     max_id = result["max_id"] if result is not None and result["max_id"] is not None else 0
@@ -61,8 +89,8 @@ def create_user(user: UserCreate):
     timestamp = now_timestamp()
 
     conn.execute(
-        "INSERT INTO Users (user_id, name, email, password_hash, mfa_secret, age, is_active, created_on, updated_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (next_user_id, user.name, user.email, password_hash, None, user.age, 1, timestamp, timestamp)
+        "INSERT INTO Users (user_id, name, email, password_hash, mfa_secret, age, is_active, created_on, updated_on, last_login) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (next_user_id, user.name, user.email, password_hash, None, user.age, 1, timestamp, timestamp, timestamp)
     )
     conn.commit()
     conn.close()
@@ -71,6 +99,10 @@ def create_user(user: UserCreate):
 class UserUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
 
 @router.delete("/{user_id}")
 def delete_user(user_id: int):
@@ -146,6 +178,36 @@ def update_user(user_id: int, user: UserUpdate):
 
     return {"message": "User updated successfully", "user_id": user_id}
 
+@router.put("/{user_id}/password")
+def change_password(user_id: int, data: ChangePasswordRequest):
+    conn = get_connection()
+    existing_user = conn.execute("SELECT * FROM Users WHERE user_id = ?", (user_id,)).fetchone()
+    if not existing_user:
+        conn.close()
+        raise HTTPException(status_code=404, detail="User not found")
+
+    current_hash = hash_password(data.current_password)
+    if current_hash != existing_user["password_hash"]:
+        conn.close()
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+
+    if not is_valid_password(data.new_password):
+        conn.close()
+        raise HTTPException(
+            status_code=400,
+            detail="Password must be at least 14 characters and include at least one letter, one uppercase letter, one number, and one symbol",
+        )
+
+    new_hash = hash_password(data.new_password)
+    conn.execute(
+        "UPDATE Users SET password_hash = ?, updated_on = ? WHERE user_id = ?",
+        (new_hash, now_timestamp(), user_id),
+    )
+    conn.commit()
+    conn.close()
+
+    return {"message": "Password changed successfully", "user_id": user_id}
+
 # Login Endpoint
 
 class LoginRequest(BaseModel):
@@ -155,6 +217,12 @@ class LoginRequest(BaseModel):
 @router.post("/login")
 def login(data: LoginRequest):
     conn = get_connection()
+
+    # Ensure last_login column exists on Users table (safe if already present)
+    try:
+        conn.execute("ALTER TABLE Users ADD COLUMN last_login TIMESTAMP")
+    except Exception:
+        pass
 
     # 1. Look up the user by email
     user = conn.execute(
@@ -174,12 +242,18 @@ def login(data: LoginRequest):
         conn.close()
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
+    # 4. Capture the prior last_login (used by frontend to decide whether to
+    #    show the "What's New" dialog), then refresh it to now.
+    previous_login = user["last_login"] if "last_login" in user.keys() else None
+    now_ts = now_timestamp()
+    conn.execute("UPDATE Users SET last_login = ? WHERE user_id = ?", (now_ts, user["user_id"]))
+    conn.commit()
     conn.close()
 
-    # 4. Return user info
     return {
         "message": "Login successful",
         "user_id": user["user_id"],
         "name": user["name"] if "name" in user.keys() else "",
-        "email": user["email"]
+        "email": user["email"],
+        "previous_login": previous_login,
     }

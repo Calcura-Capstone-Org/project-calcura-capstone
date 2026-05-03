@@ -32,7 +32,8 @@ def mock_db():
             age INTEGER,
             is_active INTEGER DEFAULT 1,
             created_on TEXT,
-            updated_on TEXT
+            updated_on TEXT,
+            last_login TIMESTAMP
         )
     """)
     conn.execute("""
@@ -116,17 +117,27 @@ class TestUsers:
         response = client.post("/users/", json={
             "name": "Test User",
             "email": "test@example.com",
-            "password": "secret123",
+            "password": "VeryStrongPass1!",
             "age": 25
         })
         assert response.status_code == 200
         assert response.json()["Message"] == "User created successfully"
 
+    def test_create_user_rejects_weak_password(self, client):
+        response = client.post("/users/", json={
+            "name": "Weak User",
+            "email": "weak@example.com",
+            "password": "short",
+            "age": 25
+        })
+        assert response.status_code == 400
+        assert "Password must be at least 14 characters" in response.json()["detail"]
+
     def test_list_users_after_create(self, client):
         client.post("/users/", json={
             "name": "Test User",
             "email": "test@example.com",
-            "password": "secret123",
+            "password": "VeryStrongPass1!",
             "age": 25
         })
         response = client.get("/users/")
@@ -139,28 +150,76 @@ class TestUsers:
         client.post("/users/", json={
             "name": "Login User",
             "email": "login@example.com",
-            "password": "mypassword",
+            "password": "MySecurePassword1!",
             "age": 30
         })
         response = client.post("/users/login", json={
             "email": "login@example.com",
-            "password": "mypassword"
+            "password": "MySecurePassword1!"
         })
         assert response.status_code == 200
         data = response.json()
         assert data["message"] == "Login successful"
         assert data["email"] == "login@example.com"
+        assert "previous_login" in data
+
+    def test_create_user_seeds_last_login(self, client):
+        # Brand-new accounts get last_login = signup time so the first login
+        # finds a non-null previous_login (and won't get treated as
+        # "first-ever login → skip changelog modal").
+        client.post("/users/", json={
+            "name": "Seeded User",
+            "email": "seeded@example.com",
+            "password": "SeededPassword1!",
+            "age": 27
+        })
+        users = client.get("/users/").json()
+        assert users[0]["last_login"] is not None
+
+    def test_login_first_returns_signup_timestamp(self, client):
+        client.post("/users/", json={
+            "name": "First Login User",
+            "email": "first@example.com",
+            "password": "FirstLoginPass1!",
+            "age": 28
+        })
+        signup_last_login = client.get("/users/").json()[0]["last_login"]
+
+        data = client.post("/users/login", json={
+            "email": "first@example.com",
+            "password": "FirstLoginPass1!"
+        }).json()
+        assert data["previous_login"] == signup_last_login
+
+    def test_login_advances_last_login(self, client):
+        client.post("/users/", json={
+            "name": "Repeat User",
+            "email": "repeat@example.com",
+            "password": "RepeatPassword1!",
+            "age": 29
+        })
+        client.post("/users/login", json={
+            "email": "repeat@example.com",
+            "password": "RepeatPassword1!"
+        })
+        after_first = client.get("/users/").json()[0]["last_login"]
+
+        data = client.post("/users/login", json={
+            "email": "repeat@example.com",
+            "password": "RepeatPassword1!"
+        }).json()
+        assert data["previous_login"] == after_first
 
     def test_login_wrong_password(self, client):
         client.post("/users/", json={
             "name": "Login User",
             "email": "login@example.com",
-            "password": "mypassword",
+            "password": "MySecurePassword1!",
             "age": 30
         })
         response = client.post("/users/login", json={
             "email": "login@example.com",
-            "password": "wrongpassword"
+            "password": "WrongPassword99!"
         })
         assert response.status_code == 401
 
@@ -179,7 +238,7 @@ class TestBudgets:
         client.post("/users/", json={
             "name": "Budget User",
             "email": "budget@example.com",
-            "password": "pass",
+            "password": "BudgetPassword1!",
             "age": 25
         })
 

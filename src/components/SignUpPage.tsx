@@ -4,6 +4,18 @@ import { Input } from "./ui/input";
 import logoImage from "../assets/logoImage.png";
 
 const API_URL = import.meta.env.VITE_API_URL;
+const PASSWORD_REQUIREMENTS_MESSAGE =
+  "Password must be at least 14 characters and include at least one letter, one uppercase letter, one number, and one symbol.";
+
+const isValidPassword = (value: string) => {
+  return (
+    value.length >= 14 &&
+    /[A-Za-z]/.test(value) &&
+    /[A-Z]/.test(value) &&
+    /\d/.test(value) &&
+    /[^A-Za-z0-9]/.test(value)
+  );
+};
 
 interface SignUpPageProps {
   onClose?: () => void;
@@ -41,6 +53,11 @@ export function SignUpPage({
 
     if (!password.trim()) {
       alert("Please enter your password.");
+      return;
+    }
+
+    if (!isValidPassword(password)) {
+      alert(PASSWORD_REQUIREMENTS_MESSAGE);
       return;
     }
 
@@ -158,9 +175,14 @@ export function SignUpPage({
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              minLength={14}
               className="w-full px-4 py-6 border-2 border-gray-900 rounded-xl"
               required
             />
+            <p className="text-sm text-gray-700 -mt-3">
+              Must be 14+ characters with a letter, uppercase letter, number,
+              and symbol.
+            </p>
 
             <Input
               type="password"

@@ -33,3 +33,18 @@ def assign_role(ur: UserRoleCreate):
     conn.commit()
     conn.close()
     return {"message": "Role assigned to user"}
+
+@router.delete("/{user_id}/{role_id}")
+def remove_role(user_id: int, role_id: int):
+    conn = get_connection()
+    cursor = conn.execute(
+        "DELETE FROM User_Roles WHERE user_id = ? AND role_id = ?",
+        (user_id, role_id)
+    )
+    conn.commit()
+    conn.close()
+
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="User role assignment not found")
+
+    return {"message": "Role removed from user"}
