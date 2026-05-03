@@ -17,52 +17,52 @@ const faqItems = [
   {
     category: "general",
     question: "What exactly is Calcura?",
-    answer: "",
+    answer: "Calcura is a personal budgeting and financial planning platform designed to help users better understand their income, expenses, savings, and spending habits. It provides personalized budget recommendations, financial insights, and goal tracking tools to support healthier financial decisions",
   },
   {
     category: "general",
     question: "How does Calcura calculate my recommended budget?",
-    answer: "",
+    answer: "Calcura analyzes the financial information you provide, including income, expenses, savings, debt, and spending categories. Based on budgeting principles and customizable financial goals, it generates recommended spending targets for each category.",
   },
   {
     category: "general",
     question: "What is the 'Net Balance' shown in my report?",
-    answer: "",
+    answer: "Net Balance represents the amount remaining after subtracting your total expenses, savings, and other allocations from your income. A positive balance means you are staying within your budget, while a negative balance may indicate overspending.",
   },
   {
     category: "privacy",
     question: "Is my personal and financial data secure?",
-    answer: "",
+    answer: "Yes. Calcura is designed with security and privacy in mind. User data is stored securely, and sensitive information is protected using modern security practices and encrypted connections whenever possible.",
   },
   {
     category: "privacy",
     question: "Does Calcura sync directly with my bank accounts?",
-    answer: "",
+    answer: "Currently, Calcura does not directly connect to or sync with bank accounts. Users manually enter their financial information to maintain full control over their personal data and privacy.",
   },
   {
     category: "features",
     question: "Can I fully customize the budget templates?",
-    answer: "",
+    answer: "Yes. Calcura allows users to customize budget templates based on their financial situation and lifestyle. You can adjust categories, spending targets, savings goals, and additional income sources.",
   },
   {
     category: "features",
     question: "How do the 'Financial Goals' work?",
-    answer: "",
+    answer: "Financial Goals help users set targets such as saving money, reducing debt, or increasing investments. Calcura uses these goals to provide adjusted recommendations and track your overall financial progress.",
   },
   {
     category: "features",
     question: "What happens if my income fluctuates each month?",
-    answer: "",
+    answer: "Calcura is designed to support variable income situations. You can update your income whenever it changes, and the recommended budget calculations will automatically adjust to reflect your current financial situation.",
   },
   {
     category: "support",
     question: "How quickly does your support team respond?",
-    answer: "",
+    answer: "We aim to respond to most support requests within 24 to 48 hours. Response times may vary depending on request volume and complexity.",
   },
   {
     category: "support",
     question: "I have a suggestion for a new feature. How can I share it?",
-    answer: "",
+    answer: "We welcome feedback and feature suggestions from users. You can submit ideas through the Feedback section of the platform or contact the support team directly.",
   },
 ];
 
