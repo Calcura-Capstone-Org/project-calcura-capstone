@@ -40,6 +40,9 @@ setup.bat
 UnitTests.ts
 src/guidelines
 
+# Deploy script not needed in image
+deploy.sh
+
 # Env files (would override the build-time VITE_API_URL)
 .env
 .env.local
